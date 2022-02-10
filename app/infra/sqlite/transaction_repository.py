@@ -9,16 +9,16 @@ INITIAL_BALANCE = 1
 
 
 @dataclass
-class WalletRepository:
-    def __init__(self) -> None:
-        self.conn = sqlite3.connect("db.db", check_same_thread=False)
+class TransactionRepository:
+    def __init__(self, filename: str) -> None:
+        self.conn = sqlite3.connect(filename, check_same_thread=False)
         self.conn.executescript(
             """
             create table if not exists Transaction (
                 source text,
                 destination text,
                 amount integer not null,
-                fee integer not null,
+                fee integer not null
             );
             """
         )
@@ -35,7 +35,8 @@ class WalletRepository:
         for row in self.conn.execute(
                 " SELECT * FROM Wallet WHERE owner_key = ?", (user_api_key,)
         ):
-            transactions += self.get_all_wallet_transactions(Wallet(*row).address)
+            for transaction in self.get_all_wallet_transactions(Wallet(*row).address):
+                transactions.append(transaction)
 
         return transactions
 
@@ -43,6 +44,15 @@ class WalletRepository:
         transactions: List[Transaction] = list()
         for row in self.conn.execute(
             " SELECT * FROM Transaction WHERE source = ? or destination = ?", (wallet_address, wallet_address,)
+        ):
+            transactions.append(Transaction(*row))
+
+        return transactions
+
+    def get_all_transactions(self) -> List[Transaction]:
+        transactions: List[Transaction] = list()
+        for row in self.conn.execute(
+                " SELECT * FROM Transaction",
         ):
             transactions.append(Transaction(*row))
 

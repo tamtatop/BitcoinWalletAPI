@@ -1,6 +1,6 @@
 import sqlite3
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, List
 
 from result import Result
 
@@ -10,12 +10,12 @@ INITIAL_BALANCE = 1
 
 @dataclass
 class WalletRepository:
-    def __init__(self) -> None:
-        self.conn = sqlite3.connect("db.db", check_same_thread=False)
+    def __init__(self, filename: str) -> None:
+        self.conn = sqlite3.connect(filename, check_same_thread=False)
         self.conn.executescript(
             """
             create table if not exists Wallet (
-                address text primary key,
+                address text,
                 owner_key text,
                 balance integer not null
             );
@@ -38,24 +38,18 @@ class WalletRepository:
 
         return None
 
-    def make_deposit(self, wallet_address: str, deposit: int) -> Optional[Wallet]:
-        self.conn.execute(
-            "UPDATE Wallet SET balance = balance + ? WHERE address = ?",
-            (
-                deposit,
-                wallet_address,
-            ),
-        )
-        self.conn.commit()
-        return self.get_wallet(wallet_address)
+    def get_user_wallets(self, user_api_key: str) -> List[Wallet]:
+        wallets: List[Wallet] = list()
+        for row in self.conn.execute(
+                " SELECT * FROM Wallet WHERE owner_key = ?", (user_api_key,)
+        ):
+            wallets.append(Wallet(*row))
 
-    def charge(self, wallet_address: str, amount: int) -> Optional[Wallet]:
-        wallet = self.get_wallet(wallet_address)
-        if wallet.balance - amount < 0:
-            return None
+        return wallets
 
+    def update_balance(self, wallet_address: str, amount: int) -> Optional[Wallet]:
         self.conn.execute(
-            "UPDATE Wallet SET balance = balance - ? WHERE address = ?",
+            "UPDATE Wallet SET balance = ? WHERE address = ?",
             (
                 amount,
                 wallet_address,

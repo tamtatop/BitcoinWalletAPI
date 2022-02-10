@@ -7,8 +7,8 @@ from app.core.user.interactor import IUserRepository, User
 
 @dataclass
 class UserRepository:
-    def __init__(self) -> None:
-        self.conn = sqlite3.connect("db.db", check_same_thread=False)
+    def __init__(self, filename: str) -> None:
+        self.conn = sqlite3.connect(filename, check_same_thread=False)
         self.conn.executescript(
             """
             create table if not exists Users (
@@ -32,11 +32,3 @@ class UserRepository:
             return User(*row)
 
         return None
-
-
-repo = UserRepository()
-user = repo.create_user("1234567")
-curr_user_incorrect = repo.get_user("777")
-curr_user_correct = repo.get_user("1234567")
-curr_user_correct = repo.get_user("123456")
-print(curr_user_correct)
