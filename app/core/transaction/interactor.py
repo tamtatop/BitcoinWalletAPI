@@ -9,11 +9,7 @@ from app.core.user.interactor import IUserRepository
 from app.core.wallet.interactor import IWalletRepository
 
 
-class WalletError(Enum):
-    pass
-
-
-class Wallet:
+class TransactionError(Enum):
     pass
 
 
