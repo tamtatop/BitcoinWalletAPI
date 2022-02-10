@@ -2,7 +2,7 @@ from unittest.mock import MagicMock
 
 from result import Err, Ok
 
-from app.core.admin.interactor import ADMIN_KEY, AdminError, AdminInteractor
+from app.core.admin.interactor import ADMIN_KEY, AdminError, AdminInteractor, GetStatisticsRequest
 from app.core.transaction.entity import Transaction
 
 
@@ -13,7 +13,7 @@ def test_admin_interactor_one_transaction() -> None:
     )
 
     admin_interactor = AdminInteractor(fake_repository)
-    response = admin_interactor.get_statistics(ADMIN_KEY)
+    response = admin_interactor.get_statistics(GetStatisticsRequest(ADMIN_KEY))
 
     fake_repository.get_all_transactions.assert_called_once()
     assert isinstance(response, Ok)
@@ -32,7 +32,7 @@ def test_admin_interactor_many_transactions() -> None:
     )
 
     admin_interactor = AdminInteractor(fake_repository)
-    response = admin_interactor.get_statistics(ADMIN_KEY)
+    response = admin_interactor.get_statistics(GetStatisticsRequest(ADMIN_KEY))
 
     fake_repository.get_all_transactions.assert_called_once()
     assert isinstance(response, Ok)
@@ -47,7 +47,7 @@ def test_wrong_admin_key() -> None:
     )
 
     admin_interactor = AdminInteractor(fake_repository)
-    response = admin_interactor.get_statistics("ABC ABC")
+    response = admin_interactor.get_statistics(GetStatisticsRequest("ABC ABC"))
     fake_repository.get_all_transactions.assert_not_called()
     assert isinstance(response, Err)
     assert response.value == AdminError.INCORRECT_ADMIN_KEY
