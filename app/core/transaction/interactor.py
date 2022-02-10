@@ -4,7 +4,6 @@ from typing import List, Protocol
 
 from result import Err, Ok, Result
 
-from app.core.facade import MakeTransactionRequest
 from app.core.transaction.entity import Transaction
 from app.core.user.interactor import IUserRepository
 from app.core.wallet.interactor import IWalletRepository
@@ -14,8 +13,16 @@ OUTER_API_TRANSACTION_RATE = 1.5
 
 
 class TransactionError(Enum):
-    pass
+    USER_NOT_FOUND = 0
+    SOURCE_WALLET_NOT_FOUND = 1
+    DESTINATION_WALLET_NOT_FOUND = 2
+    INCORRECT_API_KEY = 3
+    NOT_ENOUGH_AMOUNT_ON_SOURCE_ACCOUNT = 4
 
+
+@dataclass
+class MakeTransactionRequest:
+    user_api_key: str
 
 @dataclass
 class MakeTransactionResponse:
@@ -23,13 +30,13 @@ class MakeTransactionResponse:
 
 
 @dataclass
+class GetTransactionsRequest:
+    pass
+
+@dataclass
 class GetTransactionsResponse:
     pass
 
-
-@dataclass
-class GetStatisticsResponse:
-    pass
 
 
 #
@@ -58,8 +65,9 @@ class ITransactionRepository(Protocol):
         raise NotImplementedError()
 
 
-class TransactionError:
-    pass
+class ITransactionInteractor(Protocol):
+    def make_transaction(self, request: MakeTransactionRequest) -> Result[MakeTransactionResponse, TransactionError]:
+        raise NotImplementedError()
 
 
 @dataclass
