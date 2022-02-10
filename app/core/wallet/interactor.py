@@ -2,6 +2,8 @@ import uuid
 from dataclasses import dataclass
 from enum import Enum
 from typing import Callable, List, Optional, Protocol
+import random
+
 
 from result import Err, Ok, Result
 
@@ -27,6 +29,13 @@ class ICurrencyConverter(Protocol):
         self, satoshis: int, currency: FiatCurrency
     ) -> Result[float, ConversionError]:
         raise NotImplementedError()
+
+
+class RandomCurrencyConverter:
+    def convert_btc_to_fiat(
+        self, satoshis: int, currency: FiatCurrency
+    ) -> Result[float, ConversionError]:
+        return Ok(random.random())
 
 
 class WalletError(Enum):
@@ -89,7 +98,7 @@ class IWalletRepository(Protocol):
         raise NotImplementedError()
 
 
-class IWalletInteractor:
+class IWalletInteractor(Protocol):
     def create_wallet(
         self, request: CreateWalletRequest
     ) -> Result[WalletResponse, WalletError]:

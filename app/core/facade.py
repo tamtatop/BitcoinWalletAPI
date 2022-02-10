@@ -1,16 +1,19 @@
 from dataclasses import dataclass
-from enum import Enum
 
 from result import Result
+from app.core.admin.interactor import AdminError, AdminInteractor, GetStatisticsRequest, GetStatisticsResponse, IAdminInteractor, IAdminRepository
+from app.core.transaction.interactor import GetTransactionsRequest, GetTransactionsResponse, ITransactionInteractor, ITransactionRepository, MakeTransactionRequest, MakeTransactionResponse, TransactionError, TransactionInteractor
 
-from app.core.user.interactor import IUserInteractor, UserCreatedResponse
+from app.core.user.interactor import IUserInteractor, IUserRepository, UserCreatedResponse, UserInteractor, generate_new_unique_key
 from app.core.wallet.interactor import (
     CreateWalletRequest,
     GetWalletRequest,
-    GetWalletResponse,
     IWalletInteractor,
-    WalletCreatedResponse,
+    IWalletRepository,
+    RandomCurrencyConverter,
     WalletError,
+    WalletInteractor,
+    WalletResponse,
 )
 
 
@@ -18,34 +21,54 @@ from app.core.wallet.interactor import (
 class WalletService:
     user_interactor: IUserInteractor
     wallet_interactor: IWalletInteractor
-    # transaction_interactor:
+    transaction_interactor: ITransactionInteractor
+    admin_interactor: IAdminInteractor
 
     def create_user(self) -> UserCreatedResponse:
         return self.user_interactor.create_user()
 
     def create_wallet(
         self, request: CreateWalletRequest
-    ) -> Result[WalletCreatedResponse, WalletError]:
+    ) -> Result[WalletResponse, WalletError]:
         return self.wallet_interactor.create_wallet(request)
 
     def get_wallet(
         self, request: GetWalletRequest
-    ) -> Result[GetWalletResponse, WalletError]:
+    ) -> Result[WalletResponse, WalletError]:
         return self.wallet_interactor.get_wallet(request)
 
+    # TODO:
     def make_transaction(
         self, request: MakeTransactionRequest
-    ) -> MakeTransactionResponse:
-        pass
+    ) -> Result[MakeTransactionResponse, TransactionError]:
+        return self.transaction_interactor.make_transaction(request)
 
     # Wallet[Optional], apikey, Optional[walletaddress]
+    # TODO:
     def get_transactions(
         self, request: GetTransactionsRequest
     ) -> GetTransactionsResponse:
-        pass
+        raise NotImplementedError()
 
+    # above function
     # def get_wallet_transactions(self, request: GetWalletTransactionsRequest) -> GetTransactionsResponse:
     #     pass
 
-    def get_statistics(self, request: GetStatisticsRequst) -> GetStatisticsResponse:
-        pass
+    def get_statistics(self, request: GetStatisticsRequest) -> Result[GetStatisticsResponse, AdminError]:
+        return self.admin_interactor.get_statistics(request)
+
+    
+    @classmethod
+    def create(cls, 
+            user_repository: IUserRepository,
+            wallet_repository: IWalletRepository,
+            transaction_repository: ITransactionRepository,
+            admin_repository: IAdminRepository,
+            ) -> "WalletService":
+        return cls(
+                UserInteractor(user_repository, generate_new_unique_key),
+                WalletInteractor(wallet_repository, user_repository, RandomCurrencyConverter(), generate_new_unique_key),
+                TransactionInteractor(transaction_repository, user_repository, wallet_repository),
+                AdminInteractor(admin_repository)
+        )
+

@@ -6,8 +6,6 @@ from result import Err, Ok, Result
 
 from app.core.transaction.entity import Transaction
 
-ADMIN_KEY = "sezam-gaighe"
-
 
 class AdminError(Enum):
     INCORRECT_ADMIN_KEY = 0
@@ -24,24 +22,27 @@ class GetStatisticsResponse:
     profit: int
 
 
-# TODO: do we need this?
-class IAdminInteractor(Protocol):
-    def get_statistics(self) -> GetStatisticsResponse:
-        raise NotImplementedError()
 
 
 class IAdminRepository(Protocol):
     def get_all_transactions(self) -> List[Transaction]:
         raise NotImplementedError()
 
+ADMIN_KEY = "sezam-gaighe"
+class IAdminInteractor(Protocol):
+    def get_statistics(
+        self, request: GetStatisticsRequest
+    ) -> Result[GetStatisticsResponse, AdminError]:
+        raise NotImplementedError()
 
 @dataclass
 class AdminInteractor:
     admin_repository: IAdminRepository
 
     def get_statistics(
-        self, admin_key: str
+        self, request: GetStatisticsRequest
     ) -> Result[GetStatisticsResponse, AdminError]:
+        admin_key = request.admin_key
         if admin_key != ADMIN_KEY:
             return Err(AdminError.INCORRECT_ADMIN_KEY)
         transactions = self.admin_repository.get_all_transactions()
