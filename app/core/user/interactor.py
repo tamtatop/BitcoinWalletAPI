@@ -28,6 +28,11 @@ def generate_new_unique_key() -> str:
     return uuid.uuid1().hex
 
 
+class IUserInteractor(Protocol):
+    def create_user(self) -> UserCreatedResponse:
+        raise NotImplementedError()
+
+
 @dataclass
 class UserInteractor:
     repository: IUserRepository

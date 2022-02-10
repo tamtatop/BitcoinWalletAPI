@@ -6,6 +6,7 @@ from result import Err, Ok, Result
 
 from app.core.user.interactor import IUserRepository, User
 
+MAX_WALLETS_PER_PERSON = 3
 
 class FiatCurrency(Enum):
     GEL = 0
@@ -30,6 +31,7 @@ class ICurrencyConverter(Protocol):
 class WalletError(Enum):
     USER_NOT_FOUND = 0
     WALLET_NOT_FOUND = 1
+    WALLET_LIMIT_REACHED = 2
 
 
 @dataclass
@@ -39,14 +41,15 @@ class Wallet:
     balance: int
 
 
-@dataclass
-class WalletCreatedResponse:
-    wallet: Wallet
-
+# @dataclass
+# class WalletCreatedResponse:
+#     wallet_address: str
+#     balance_satoshi: int
+#     balance_usd: float
 
 # - Returns wallet address and balance in BTC and USD
 @dataclass
-class GetWalletResponse:
+class WalletResponse:
     wallet_address: str
     balance_satoshi: int
     balance_usd: float
@@ -73,6 +76,18 @@ class IWalletRepository(Protocol):
         raise NotImplementedError()
 
 
+class IWalletInteractor:
+    def create_wallet(
+        self, request: CreateWalletRequest
+    ) -> Result[WalletResponse, WalletError]:
+        raise NotImplementedError()
+
+    def get_wallet(
+        self, request: GetWalletRequest
+    ) -> Result[WalletResponse, WalletError]:
+        raise NotImplementedError()
+
+
 @dataclass
 class WalletInteractor:
     wallet_repository: IWalletRepository
@@ -80,18 +95,18 @@ class WalletInteractor:
 
     def create_wallet(
         self, request: CreateWalletRequest
-    ) -> Result[WalletCreatedResponse, WalletError]:
+    ) -> Result[WalletResponse, WalletError]:
         if self.user_repository.get_user(request.user_api_key) is not None:
-            return Err(WalletError.USER_DOES_NOT_EXIST)
+            return Err(WalletError.USER_NOT_FOUND)
         return Ok(
-            WalletCreatedResponse(
+            WalletResponse(
                 wallet=self.wallet_repository.create_wallet(request.user_api_key)
             )
         )
 
     def get_wallet(
         self, request: GetWalletRequest
-    ) -> Result[GetWalletResponse, WalletError]:
+    ) -> Result[WalletResponse, WalletError]:
         if self.user_repository.get_user(request.user_api_key) is not None:
             return Err(WalletError.USER_NOT_FOUND)
         res = self.wallet_repository.get_wallet(request.wallet_address)

@@ -1,39 +1,24 @@
+from dataclasses import dataclass
 from enum import Enum
+from app.core.user.interactor import IUserInteractor, UserCreatedResponse
+from app.core.wallet.interactor import CreateWalletRequest, GetWalletRequest, GetWalletResponse, IWalletInteractor, WalletCreatedResponse, WalletError
+from result import Result
 
-
-class Errors(Enum):
-    pass
-
-
-class WalletCreatedRequest:
-    pass
-
-
-class GetWalletRequest:
-    pass
-
-
-class MakeTransactionRequest:
-    pass
-
-
-class GetTransactionsRequest:
-    pass
-
-
-class GetStatisticsRequst:
-    pass
-
-
+@dataclass
 class WalletService:
+    user_interactor: IUserInteractor
+    wallet_interactor: IWalletInteractor
+    # transaction_interactor: 
+
+
     def create_user(self) -> UserCreatedResponse:
-        pass
+        return self.user_interactor.create_user()
 
-    def create_wallet(self, request: WalletCreatedRequest) -> WalletCreatedResponse:
-        pass
+    def create_wallet(self, request: CreateWalletRequest) -> Result[WalletCreatedResponse, WalletError]:
+        return self.wallet_interactor.create_wallet(request)
 
-    def get_wallet(self, request: GetWalletRequest) -> WalletResponse:
-        pass
+    def get_wallet(self, request: GetWalletRequest) -> Result[GetWalletResponse, WalletError]:
+        return self.wallet_interactor.get_wallet(request)
 
     def make_transaction(
         self, request: MakeTransactionRequest
