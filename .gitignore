@@ -1,0 +1,5 @@
+alkhok18.zip
+__pycache__
+.mypy_cache
+.pytest_cache
+*.db
