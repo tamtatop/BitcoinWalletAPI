@@ -43,13 +43,6 @@ class Wallet:
     balance: int
 
 
-# @dataclass
-# class WalletCreatedResponse:
-#     wallet_address: str
-#     balance_satoshi: int
-#     balance_usd: float
-
-# - Returns wallet address and balance in BTC and USD
 @dataclass
 class WalletResponse:
     wallet_address: str
@@ -149,6 +142,9 @@ class WalletInteractor:
             return Err(WalletError.USER_NOT_FOUND)
 
         wallet = self.wallet_repository.get_wallet(request.wallet_address)
+        if wallet is None:
+            return Err(WalletError.WALLET_NOT_FOUND)
+
         converted_to_fiat: Result[
             float, ConversionError
         ] = self.currency_convertor.convert_btc_to_fiat(
@@ -158,13 +154,10 @@ class WalletInteractor:
         if not converted_to_fiat.is_ok():
             return Err(WalletError.UNSUPPORTED_CURRENCY)
 
-        if wallet is not None:
-            return Ok(
-                WalletResponse(
-                    wallet_address=wallet.address,
-                    balance_satoshi=wallet.balance,
-                    balance_usd=converted_to_fiat.value,
-                )
+        return Ok(
+            WalletResponse(
+                wallet_address=wallet.address,
+                balance_satoshi=wallet.balance,
+                balance_usd=converted_to_fiat.value,
             )
-        else:
-            return Err(WalletError.WALLET_NOT_FOUND)
+        )
