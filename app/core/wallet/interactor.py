@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Callable, List, Optional, Protocol
 import random
+import httpx
 
 
 from result import Err, Ok, Result
@@ -10,8 +11,8 @@ from result import Err, Ok, Result
 from app.core.user.interactor import IUserRepository
 
 MAX_WALLETS_PER_PERSON = 3
-INITIAL_WALLET_VALUE_SATOSHIS = 100000000
-
+SATOSHI_IN_BTC = 100000000
+INITIAL_WALLET_VALUE_SATOSHIS = SATOSHI_IN_BTC
 
 class FiatCurrency(Enum):
     GEL = 0
@@ -29,6 +30,29 @@ class ICurrencyConverter(Protocol):
         self, satoshis: int, currency: FiatCurrency
     ) -> Result[float, ConversionError]:
         raise NotImplementedError()
+
+
+class CurrencyConverter:
+    def convert_btc_to_fiat(
+        self, satoshis: int, currency: FiatCurrency
+    ) -> Result[float, ConversionError]:
+        fiat_currency_str = {
+            FiatCurrency.USD: 'USD',
+            FiatCurrency.EUR: 'EUR',
+            FiatCurrency.RUB: 'RUB',
+        }
+
+        response = httpx.get('https://blockchain.info/ticker')
+
+        if currency not in fiat_currency_str:
+            return Err(ConversionError.UNSUPPORTED_CURRENCY)
+
+        last_conversion_rate = response.json()[fiat_currency_str[currency]]['last']
+
+        return Ok((satoshis / SATOSHI_IN_BTC) * last_conversion_rate)
+
+
+
 
 
 class RandomCurrencyConverter:
