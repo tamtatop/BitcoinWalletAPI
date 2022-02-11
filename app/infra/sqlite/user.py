@@ -6,7 +6,7 @@ from app.core.user.interactor import User
 
 
 @dataclass
-class UserRepository:
+class SqlUserRepository:
     def __init__(self, filename: str) -> None:
         self.conn = sqlite3.connect(filename, check_same_thread=False)
         self.conn.executescript(

@@ -8,7 +8,7 @@ INITIAL_BALANCE = 1
 
 
 @dataclass
-class WalletRepository:
+class SqlWalletRepository:
     def __init__(self, filename: str) -> None:
         self.conn = sqlite3.connect(filename, check_same_thread=False)
         self.conn.executescript(

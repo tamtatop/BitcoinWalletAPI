@@ -10,9 +10,9 @@ from app.core.wallet.interactor import IWalletRepository
 from app.infra.inmemory.transaction import InMemoryTransactionRepository
 from app.infra.inmemory.user import InMemoryUserRepository
 from app.infra.inmemory.wallet import InMemoryWalletRepository
-from app.infra.sqlite.transaction import TransactionRepository
-from app.infra.sqlite.user import UserRepository
-from app.infra.sqlite.wallet import WalletRepository
+from app.infra.sqlite.transaction import SqlTransactionRepository
+from app.infra.sqlite.user import SqlUserRepository
+from app.infra.sqlite.wallet import SqlWalletRepository
 
 
 def pytest_addoption(parser: Parser) -> None:
@@ -31,7 +31,7 @@ def use_sql_implementation(request: pytest.FixtureRequest) -> bool:
 @pytest.fixture(scope="function")
 def user_repository(request: pytest.FixtureRequest) -> IUserRepository:
     if use_sql_implementation(request):
-        return UserRepository(":memory:")
+        return SqlUserRepository(":memory:")
     else:
         return InMemoryUserRepository()
 
@@ -39,7 +39,7 @@ def user_repository(request: pytest.FixtureRequest) -> IUserRepository:
 @pytest.fixture(scope="function")
 def wallet_repository(request: pytest.FixtureRequest) -> IWalletRepository:
     if use_sql_implementation(request):
-        return WalletRepository(":memory:")
+        return SqlWalletRepository(":memory:")
     else:
         return InMemoryWalletRepository()
 
@@ -55,7 +55,7 @@ def transaction_and_admin_repository(
     wallet_repository: IWalletRepository, request: pytest.FixtureRequest
 ) -> IAdminAndTransactionRepository:
     if use_sql_implementation(request):
-        return TransactionRepository(":memory:", wallet_repository)
+        return SqlTransactionRepository(":memory:", wallet_repository)
     else:
         return InMemoryTransactionRepository(wallet_repository)
 

@@ -8,7 +8,7 @@ from app.infra.repository.id_transaction import IdTransaction
 
 
 @dataclass(init=False)
-class TransactionRepository:
+class SqlTransactionRepository:
     def __init__(self, filename: str, wallet_repository: IWalletRepository) -> None:
         self.conn = sqlite3.connect(filename, check_same_thread=False)
         self.wallet_repository = wallet_repository

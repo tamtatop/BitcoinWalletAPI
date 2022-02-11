@@ -8,9 +8,9 @@ from app.core.transaction.interactor import ITransactionRepository
 from app.core.user.interactor import IUserRepository
 from app.core.wallet.interactor import IWalletRepository
 from app.infra.fastapi.api_main import setup_fastapi
-from app.infra.sqlite.transaction import TransactionRepository
-from app.infra.sqlite.user import UserRepository
-from app.infra.sqlite.wallet import WalletRepository
+from app.infra.sqlite.transaction import SqlTransactionRepository
+from app.infra.sqlite.user import SqlUserRepository
+from app.infra.sqlite.wallet import SqlWalletRepository
 
 
 # helper for representing IAdminRepository + ITransactionRepository
@@ -21,17 +21,17 @@ class IAdminAndTransactionRepository(
 
 
 def setup_user_repository() -> IUserRepository:
-    return UserRepository("db.db")
+    return SqlUserRepository("db.db")
 
 
 def setup_wallet_repository() -> IWalletRepository:
-    return WalletRepository("db.db")
+    return SqlWalletRepository("db.db")
 
 
 def setup_admin_and_transaction_repository(
     wallet_repository: IWalletRepository,
 ) -> IAdminAndTransactionRepository:
-    return TransactionRepository("db.db", wallet_repository)
+    return SqlTransactionRepository("db.db", wallet_repository)
 
 
 def setup() -> FastAPI:
