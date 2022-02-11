@@ -10,9 +10,9 @@ from app.core.wallet.interactor import IWalletRepository
 from app.infra.inmemory.transaction import InMemoryTransactionRepository
 from app.infra.inmemory.user import InMemoryUserRepository
 from app.infra.inmemory.wallet import InMemoryWalletRepository
-from app.infra.sqlite.transaction_repository import TransactionRepository
-from app.infra.sqlite.user_repository import UserRepository
-from app.infra.sqlite.wallet_repository import WalletRepository
+from app.infra.sqlite.transaction import TransactionRepository
+from app.infra.sqlite.user import UserRepository
+from app.infra.sqlite.wallet import WalletRepository
 
 
 def pytest_addoption(parser: Parser) -> None:

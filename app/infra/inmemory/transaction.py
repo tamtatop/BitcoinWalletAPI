@@ -4,26 +4,7 @@ from typing import List
 
 from app.core.transaction.entity import Transaction
 from app.core.wallet.interactor import IWalletRepository
-
-
-@dataclass(eq=False)
-class IdTransaction:
-    id: int
-    transaction: Transaction
-
-    def is_related_to_addresses(self, addresses: List[str]) -> bool:
-        return (
-            self.transaction.source in addresses
-            or self.transaction.destination in addresses
-        )
-
-    def __eq__(self, other):
-        return isinstance(other, IdTransaction) and self.id == other.id
-
-    def __hash__(self):
-        # use the hashcode of self.ssn since that is used
-        # for equality checks as well
-        return hash(self.id)
+from app.infra.repository.id_transaction import IdTransaction
 
 
 @dataclass

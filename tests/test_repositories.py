@@ -262,3 +262,38 @@ def test_transaction_to_self(
     assert len(transaction_repository.get_all_user_transactions("newuser")) == 2
     assert len(transaction_repository.get_all_wallet_transactions("aaa")) == 2
     assert len(admin_repository.get_all_transactions()) == 2
+
+
+def test_transaction_two_identical(
+    user_repository: IUserRepository,
+    wallet_repository: IWalletRepository,
+    admin_repository: IAdminRepository,
+    transaction_repository: ITransactionRepository,
+) -> None:
+    tamta = user_repository.create_user("tamta")
+    khokho = user_repository.create_user("khokho")
+
+    wallet_repository.create_wallet(tamta.api_key, "my_rich_wallet", 100000000000)
+    wallet_repository.create_wallet(khokho.api_key, "poor_boy", 0)
+
+    transaction_repository.create_transaction(
+        Transaction("my_rich_wallet", "poor_boy", 1, 0)
+    )
+    assert len(transaction_repository.get_all_user_transactions("tamta")) == 1
+    assert len(transaction_repository.get_all_user_transactions("khokho")) == 1
+    assert (
+        len(transaction_repository.get_all_wallet_transactions("my_rich_wallet")) == 1
+    )
+    assert len(transaction_repository.get_all_wallet_transactions("poor_boy")) == 1
+    assert len(admin_repository.get_all_transactions()) == 1
+
+    transaction_repository.create_transaction(
+        Transaction("my_rich_wallet", "poor_boy", 1, 0)
+    )
+    assert len(transaction_repository.get_all_user_transactions("tamta")) == 2
+    assert len(transaction_repository.get_all_user_transactions("khokho")) == 2
+    assert (
+        len(transaction_repository.get_all_wallet_transactions("my_rich_wallet")) == 2
+    )
+    assert len(transaction_repository.get_all_wallet_transactions("poor_boy")) == 2
+    assert len(admin_repository.get_all_transactions()) == 2

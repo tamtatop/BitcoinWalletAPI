@@ -1,9 +1,10 @@
 import sqlite3
 from dataclasses import dataclass
-from typing import List
+from typing import List, Set
 
 from app.core.transaction.entity import Transaction
 from app.core.wallet.interactor import IWalletRepository
+from app.infra.repository.id_transaction import IdTransaction
 
 
 @dataclass(init=False)
@@ -14,6 +15,7 @@ class TransactionRepository:
         self.conn.executescript(
             """
             create table if not exists Transaction_tbl (
+                transaction_id integer PRIMARY KEY AUTOINCREMENT,
                 source_wallet text,
                 destination_wallet text,
                 amount integer not null,
@@ -25,8 +27,9 @@ class TransactionRepository:
 
     def create_transaction(self, transaction: Transaction) -> None:
         self.conn.execute(
-            " INSERT INTO Transaction_tbl VALUES (?, ?, ?, ?)",
+            " INSERT INTO Transaction_tbl VALUES (?, ?, ?, ?, ?)",
             (
+                None,
                 transaction.source,
                 transaction.destination,
                 transaction.amount,
@@ -35,19 +38,21 @@ class TransactionRepository:
         )
         self.conn.commit()
 
-    # FIXME: two same transactions
     def get_all_user_transactions(self, user_api_key: str) -> List[Transaction]:
         user_wallets = self.wallet_repository.get_user_wallets(user_api_key)
-        user_wallet_addresses = set(w.address for w in user_wallets)
+        user_wallet_addresses = list(w.address for w in user_wallets)
 
-        transactions: List[Transaction] = list()
+        idtransactions: Set[IdTransaction] = set()
+
         for a in user_wallet_addresses:
-            transactions.extend(self.get_all_wallet_transactions(a))
+            idtransactions.update(self._get_all_wallet_idtransactions(a))
 
-        return transactions
+        return [t.transaction for t in idtransactions]
 
-    def get_all_wallet_transactions(self, wallet_address: str) -> List[Transaction]:
-        transactions: List[Transaction] = list()
+    def _get_all_wallet_idtransactions(
+        self, wallet_address: str
+    ) -> List[IdTransaction]:
+        idtransactions: List[IdTransaction] = list()
         for row in self.conn.execute(
             " SELECT * FROM Transaction_tbl WHERE source_wallet = ? or destination_wallet = ?",
             (
@@ -55,15 +60,19 @@ class TransactionRepository:
                 wallet_address,
             ),
         ):
-            transactions.append(Transaction(*row))
+            idtransactions.append(IdTransaction.from_row(row))
+        return idtransactions
 
-        return transactions
+    def get_all_wallet_transactions(self, wallet_address: str) -> List[Transaction]:
+        return [
+            t.transaction for t in self._get_all_wallet_idtransactions(wallet_address)
+        ]
 
     def get_all_transactions(self) -> List[Transaction]:
-        transactions: List[Transaction] = list()
+        idtransactions: List[Transaction] = list()
         for row in self.conn.execute(
             " SELECT * FROM Transaction_tbl",
         ):
-            transactions.append(Transaction(*row))
+            idtransactions.append(IdTransaction.from_row(row).transaction)
 
-        return transactions
+        return idtransactions

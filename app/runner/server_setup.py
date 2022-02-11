@@ -8,9 +8,9 @@ from app.core.transaction.interactor import ITransactionRepository
 from app.core.user.interactor import IUserRepository
 from app.core.wallet.interactor import IWalletRepository
 from app.infra.fastapi.api_main import setup_fastapi
-from app.infra.sqlite.transaction_repository import TransactionRepository
-from app.infra.sqlite.user_repository import UserRepository
-from app.infra.sqlite.wallet_repository import WalletRepository
+from app.infra.sqlite.transaction import TransactionRepository
+from app.infra.sqlite.user import UserRepository
+from app.infra.sqlite.wallet import WalletRepository
 
 
 # helper for representing IAdminRepository + ITransactionRepository
