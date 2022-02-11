@@ -10,8 +10,8 @@ from app.core.transaction.interactor import (
     TransactionInteractor,
 )
 from app.core.user.interactor import IUserRepository
-from app.core.wallet.interactor import IWalletRepository
 from app.core.wallet.entity import Wallet
+from app.core.wallet.interactor import IWalletRepository
 from tests.conftest import IAdminAndTransactionRepository
 
 
@@ -102,7 +102,7 @@ def test_make_transaction_one_user(
             user_api_key=user_api_key,
             source_address=wallet_address_1,
             destination_address=wallet_address_2,
-            amount=init_balance**2,
+            amount=init_balance ** 2,
         )
     )
 

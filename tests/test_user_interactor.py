@@ -1,12 +1,12 @@
 from unittest.mock import MagicMock
 
+from app.core.user.entity import User
 from app.core.user.interactor import (
     IUserRepository,
     UserCreatedResponse,
     UserInteractor,
     generate_new_unique_key,
 )
-from app.core.user.entity import User
 
 
 def test_unique_api_keys() -> None:
