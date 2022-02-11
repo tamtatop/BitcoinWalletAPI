@@ -241,3 +241,24 @@ def test_get_all_transactions(
     transactions = admin_repository.get_all_transactions()
 
     assert len(transactions) == 2
+
+
+def test_transaction_to_self(
+    user_repository: IUserRepository,
+    wallet_repository: IWalletRepository,
+    admin_repository: IAdminRepository,
+    transaction_repository: ITransactionRepository,
+) -> None:
+    first_user = user_repository.create_user("newuser")
+    wallet_repository.create_wallet(first_user.api_key, "aaa", 100)
+    wallet_repository.create_wallet(first_user.api_key, "bbb", 100)
+
+    transaction_repository.create_transaction(Transaction("aaa", "bbb", 20, 0))
+    assert len(transaction_repository.get_all_user_transactions("newuser")) == 1
+    assert len(transaction_repository.get_all_wallet_transactions("aaa")) == 1
+    assert len(admin_repository.get_all_transactions()) == 1
+
+    transaction_repository.create_transaction(Transaction("aaa", "bbb", 20, 0))
+    assert len(transaction_repository.get_all_user_transactions("newuser")) == 2
+    assert len(transaction_repository.get_all_wallet_transactions("aaa")) == 2
+    assert len(admin_repository.get_all_transactions()) == 2

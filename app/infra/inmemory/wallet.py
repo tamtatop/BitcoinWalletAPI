@@ -29,5 +29,5 @@ class InMemoryWalletRepository:
 
     def update_balance(self, wallet_address: str, balance: int) -> None:
         wallet = self.get_wallet(wallet_address)
-        assert isinstance(wallet, Ok)
+        assert wallet is not None
         wallet.balance = balance

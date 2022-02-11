@@ -143,10 +143,10 @@ def test_update_balance(wallet_repository: IWalletRepository) -> None:
     )
 
     pre_check = wallet_repository.get_wallet(test_wallet_address)
-    assert isinstance(pre_check, Ok)
+    assert pre_check is not None
     assert pre_check.balance == test_init_balance
 
     wallet_repository.update_balance(test_wallet_address, test_new_balance)
     new_check = wallet_repository.get_wallet(test_wallet_address)
-    assert isinstance(new_check, Ok)
+    assert new_check is not None
     assert new_check.balance == test_new_balance
