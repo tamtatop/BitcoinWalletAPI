@@ -2,7 +2,7 @@ import sqlite3
 from dataclasses import dataclass
 from typing import Optional
 
-from app.core.user.interactor import IUserRepository, User
+from app.core.user.interactor import User
 
 
 @dataclass
@@ -19,15 +19,13 @@ class UserRepository:
         self.conn.commit()
 
     def create_user(self, api_key: str) -> User:
-        self.conn.execute(
-            " INSERT INTO Users VALUES (?)", (api_key, )
-        )
+        self.conn.execute(" INSERT INTO Users VALUES (?)", (api_key,))
         self.conn.commit()
         return User(api_key)
 
     def get_user(self, user_api_key: str) -> Optional[User]:
         for row in self.conn.execute(
-                " SELECT * FROM Users WHERE api_key = ?", (user_api_key, )
+            " SELECT * FROM Users WHERE api_key = ?", (user_api_key,)
         ):
             return User(*row)
 

@@ -4,9 +4,13 @@ from fastapi import APIRouter, Depends, HTTPException
 from result import Ok
 
 from app.core.facade import WalletService
-from app.core.transaction.entity import Transaction
-from app.core.transaction.interactor import MakeTransactionResponse, TransactionError, MakeTransactionRequest, \
-    GetTransactionsResponse, GetTransactionsRequest
+from app.core.transaction.interactor import (
+    GetTransactionsRequest,
+    GetTransactionsResponse,
+    MakeTransactionRequest,
+    MakeTransactionResponse,
+    TransactionError,
+)
 from app.infra.fastapi.dependables import get_core
 
 error_message: Dict[TransactionError, str] = {
@@ -23,17 +27,21 @@ transaction_api = APIRouter()
 
 @transaction_api.post("/transactions")
 def create_transaction(
-        api_key: str,
-        source: str,
-        destination: str,
-        amount: int,
-        core: WalletService = Depends(get_core)
+    api_key: str,
+    source: str,
+    destination: str,
+    amount: int,
+    core: WalletService = Depends(get_core),
 ) -> MakeTransactionResponse:
-    request = MakeTransactionRequest(user_api_key=api_key, source_address=source, destination_address=destination,
-                                     amount=amount)
+    request = MakeTransactionRequest(
+        user_api_key=api_key,
+        source_address=source,
+        destination_address=destination,
+        amount=amount,
+    )
     transaction_made_response = core.make_transaction(request)
 
-    if transaction_made_response.is_ok():
+    if isinstance(transaction_made_response, Ok):
         return transaction_made_response.value
     else:
         raise HTTPException(
@@ -42,9 +50,8 @@ def create_transaction(
 
 
 @transaction_api.get("/transactions")
-def get_transactions(
-        api_key: str,
-        core: WalletService = Depends(get_core)
+def get_transactions_for_user(
+    api_key: str, core: WalletService = Depends(get_core)
 ) -> GetTransactionsResponse:
     request = GetTransactionsRequest(user_api_key=api_key, wallet_address=None)
 
@@ -59,10 +66,8 @@ def get_transactions(
 
 
 @transaction_api.get("/wallets/{address}/transactions")
-def get_transactions(
-        api_key: str,
-        address: str,
-        core: WalletService = Depends(get_core)
+def get_transactions_for_wallet(
+    api_key: str, address: str, core: WalletService = Depends(get_core)
 ) -> GetTransactionsResponse:
     request = GetTransactionsRequest(user_api_key=api_key, wallet_address=address)
 

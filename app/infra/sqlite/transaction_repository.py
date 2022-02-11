@@ -2,7 +2,7 @@ import sqlite3
 from dataclasses import dataclass
 from typing import List
 
-from app.core.transaction.interactor import Transaction
+from app.core.transaction.entity import Transaction
 from app.core.wallet.interactor import IWalletRepository
 
 

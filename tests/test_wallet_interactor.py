@@ -1,22 +1,20 @@
 from unittest.mock import MagicMock
 
 from result import Ok, Result
+from result.result import Err
 
-from app.core.btc_constants import SATOSHI_IN_BTC
-from app.core.user.interactor import User, IUserRepository
+from app.core.btc_constants import INITIAL_WALLET_VALUE_SATOSHIS, SATOSHI_IN_BTC
+from app.core.currency_converter import ConversionError, FiatCurrency
+from app.core.user.interactor import IUserRepository, User
 from app.core.wallet.interactor import (
-    INITIAL_WALLET_VALUE_SATOSHIS,
-    ConversionError,
     CreateWalletRequest,
-    FiatCurrency,
     GetWalletRequest,
+    IWalletRepository,
     Wallet,
     WalletError,
     WalletInteractor,
-    WalletResponse, IWalletRepository,
+    WalletResponse,
 )
-from app.infra.inmemory.user import InMemoryUserRepository
-from app.infra.inmemory.wallet import InMemoryWalletRepository
 
 
 class FakeCurrencyConverter:
@@ -64,7 +62,9 @@ def test_create_wallet_magin_mock() -> None:
     assert response.value.balance_usd == INITIAL_WALLET_VALUE_SATOSHIS * 2
 
 
-def test_create_wallet_im(wallet_repository: IWalletRepository, user_repository: IUserRepository) -> None:
+def test_create_wallet(
+    wallet_repository: IWalletRepository, user_repository: IUserRepository
+) -> None:
 
     test_user_api = "Dummy Key"
 
@@ -78,7 +78,7 @@ def test_create_wallet_im(wallet_repository: IWalletRepository, user_repository:
     )
 
     result_err_no_user = interactor.create_wallet(CreateWalletRequest(""))
-    assert result_err_no_user.is_err()
+    assert isinstance(result_err_no_user, Err)
     assert result_err_no_user.value == WalletError.USER_NOT_FOUND
 
     result_ok = interactor.create_wallet(CreateWalletRequest(test_user_api))
@@ -93,11 +93,13 @@ def test_create_wallet_im(wallet_repository: IWalletRepository, user_repository:
     result_err_wallet_limit = interactor.create_wallet(
         CreateWalletRequest(test_user_api)
     )
-    assert result_err_wallet_limit.is_err()
+    assert isinstance(result_err_wallet_limit, Err)
     assert result_err_wallet_limit.value == WalletError.WALLET_LIMIT_REACHED
 
 
-def test_get_wallet_im(wallet_repository: IWalletRepository, user_repository: IUserRepository) -> None:
+def test_get_wallet(
+    wallet_repository: IWalletRepository, user_repository: IUserRepository
+) -> None:
     test_user_api = "Dummy Key"
 
     user_repository.create_user(test_user_api)
@@ -107,30 +109,30 @@ def test_get_wallet_im(wallet_repository: IWalletRepository, user_repository: IU
         FakeCurrencyConverter(),
         wallet_address_creator,
     )
-
-    new_wallet: WalletResponse = interactor.create_wallet(
-        CreateWalletRequest(test_user_api)
-    ).value
+    response = interactor.create_wallet(CreateWalletRequest(test_user_api))
+    assert isinstance(response, Ok)
+    new_wallet: WalletResponse = response.value
 
     result_err_no_user = interactor.get_wallet(
         GetWalletRequest("", new_wallet.wallet_address)
     )
-    assert result_err_no_user.is_err()
+    assert isinstance(result_err_no_user, Err)
     assert result_err_no_user.value == WalletError.USER_NOT_FOUND
 
     result_err_no_wallet = interactor.get_wallet(GetWalletRequest(test_user_api, ""))
-    assert result_err_no_wallet.is_err()
+    assert isinstance(result_err_no_wallet, Err)
     assert result_err_no_wallet.value == WalletError.WALLET_NOT_FOUND
 
     wallet = interactor.get_wallet(
         GetWalletRequest(test_user_api, new_wallet.wallet_address)
     )
+    assert isinstance(wallet, Ok)
     assert wallet.value.wallet_address == new_wallet.wallet_address
     assert wallet.value.balance_btc == new_wallet.balance_btc
     assert wallet.value.balance_usd == new_wallet.balance_usd
 
 
-def test_update_balance_im(wallet_repository: IWalletRepository) -> None:
+def test_update_balance(wallet_repository: IWalletRepository) -> None:
     test_user_api_key = "dummy key"
     test_wallet_address = "dummy address"
     test_init_balance = 1
@@ -141,8 +143,10 @@ def test_update_balance_im(wallet_repository: IWalletRepository) -> None:
     )
 
     pre_check = wallet_repository.get_wallet(test_wallet_address)
+    assert isinstance(pre_check, Ok)
     assert pre_check.balance == test_init_balance
 
     wallet_repository.update_balance(test_wallet_address, test_new_balance)
     new_check = wallet_repository.get_wallet(test_wallet_address)
+    assert isinstance(new_check, Ok)
     assert new_check.balance == test_new_balance

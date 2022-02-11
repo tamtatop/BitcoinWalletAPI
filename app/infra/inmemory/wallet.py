@@ -1,6 +1,8 @@
 from dataclasses import dataclass, field
 from typing import List, Optional
 
+from result.result import Ok
+
 from app.core.wallet.interactor import Wallet
 
 
@@ -8,6 +10,7 @@ from app.core.wallet.interactor import Wallet
 class InMemoryWalletRepository:
     data: List[Wallet] = field(default_factory=list)
 
+    # TODO: shoule objects be returned by reference? or should we copy
     def create_wallet(
         self, user_api_key: str, wallet_address: str, initial_balance: int
     ) -> Wallet:
@@ -25,4 +28,6 @@ class InMemoryWalletRepository:
         return [w for w in self.data if w.owner_key == user_api_key]
 
     def update_balance(self, wallet_address: str, balance: int) -> None:
-        self.get_wallet(wallet_address).balance = balance
+        wallet = self.get_wallet(wallet_address)
+        assert isinstance(wallet, Ok)
+        wallet.balance = balance

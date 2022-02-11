@@ -1,7 +1,7 @@
 from typing import Protocol
 
-from _pytest.config.argparsing import Parser
 import pytest
+from _pytest.config.argparsing import Parser
 
 from app.core.admin.interactor import IAdminRepository
 from app.core.transaction.interactor import ITransactionRepository
@@ -25,7 +25,7 @@ def pytest_addoption(parser: Parser) -> None:
 
 
 def use_sql_implementation(request: pytest.FixtureRequest) -> bool:
-    return request.config.getoption("--sql")
+    return request.config.getoption("--sql")  # type: ignore
 
 
 @pytest.fixture(scope="function")
@@ -44,13 +44,16 @@ def wallet_repository(request: pytest.FixtureRequest) -> IWalletRepository:
         return InMemoryWalletRepository()
 
 
-class IAdminAndTransactionRepository(IAdminRepository, ITransactionRepository, Protocol):
+class IAdminAndTransactionRepository(
+    IAdminRepository, ITransactionRepository, Protocol
+):
     pass
 
 
 @pytest.fixture(scope="function")
-def transaction_and_admin_repository(wallet_repository: IWalletRepository,
-                                     request: pytest.FixtureRequest) -> IAdminAndTransactionRepository:
+def transaction_and_admin_repository(
+    wallet_repository: IWalletRepository, request: pytest.FixtureRequest
+) -> IAdminAndTransactionRepository:
     if use_sql_implementation(request):
         return TransactionRepository(":memory:", wallet_repository)
     else:
@@ -58,10 +61,14 @@ def transaction_and_admin_repository(wallet_repository: IWalletRepository,
 
 
 @pytest.fixture(scope="function")
-def transaction_repository(transaction_and_admin_repository: IAdminAndTransactionRepository) -> ITransactionRepository:
+def transaction_repository(
+    transaction_and_admin_repository: IAdminAndTransactionRepository,
+) -> ITransactionRepository:
     return transaction_and_admin_repository
 
 
 @pytest.fixture(scope="function")
-def admin_repository(transaction_and_admin_repository: IAdminAndTransactionRepository) -> IAdminRepository:
+def admin_repository(
+    transaction_and_admin_repository: IAdminAndTransactionRepository,
+) -> IAdminRepository:
     return transaction_and_admin_repository

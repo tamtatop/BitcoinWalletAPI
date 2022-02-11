@@ -22,18 +22,20 @@ class GetStatisticsResponse:
     profit: int
 
 
-
-
 class IAdminRepository(Protocol):
     def get_all_transactions(self) -> List[Transaction]:
         raise NotImplementedError()
 
+
 ADMIN_KEY = "sezam-gaighe"
+
+
 class IAdminInteractor(Protocol):
     def get_statistics(
         self, request: GetStatisticsRequest
     ) -> Result[GetStatisticsResponse, AdminError]:
         raise NotImplementedError()
+
 
 @dataclass
 class AdminInteractor:

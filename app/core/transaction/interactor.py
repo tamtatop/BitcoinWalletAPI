@@ -1,14 +1,14 @@
 from dataclasses import dataclass
 from enum import Enum
-from typing import List, Protocol, Optional
+from typing import List, Optional, Protocol
 
 from result import Err, Ok, Result
 
 from app.core.btc_constants import SATOSHI_IN_BTC
-from app.core.transaction.fee_calculator import IFeeCalculator
 from app.core.transaction.entity import Transaction
+from app.core.transaction.fee_calculator import IFeeCalculator
 from app.core.user.interactor import IUserRepository
-from app.core.wallet.interactor import IWalletRepository, Wallet
+from app.core.wallet.interactor import IWalletRepository
 
 
 class TransactionError(Enum):
@@ -71,11 +71,16 @@ class ITransactionRepository(Protocol):
 
 
 class ITransactionInteractor(Protocol):
-    def make_transaction(self, request: MakeTransactionRequest) -> Result[MakeTransactionResponse, TransactionError]:
+    def make_transaction(
+        self, request: MakeTransactionRequest
+    ) -> Result[MakeTransactionResponse, TransactionError]:
         raise NotImplementedError()
 
-    def get_transactions(self, request: GetTransactionsRequest) -> Result[GetTransactionsResponse, TransactionError]:
+    def get_transactions(
+        self, request: GetTransactionsRequest
+    ) -> Result[GetTransactionsResponse, TransactionError]:
         raise NotImplementedError()
+
 
 @dataclass
 class TransactionInteractor:
@@ -89,7 +94,9 @@ class TransactionInteractor:
     #   - Makes a transaction from one wallet to another
     #   - Transaction is free if the same user is the owner of both wallets
     #   - System takes a 1.5% (of the transferred amount) fee for transfers to the foreign wallets
-    def make_transaction(self, request: MakeTransactionRequest) -> Result[MakeTransactionResponse, TransactionError]:
+    def make_transaction(
+        self, request: MakeTransactionRequest
+    ) -> Result[MakeTransactionResponse, TransactionError]:
         if self.user_repository.get_user(request.user_api_key) is None:
             return Err(TransactionError.USER_NOT_FOUND)
 
@@ -115,30 +122,42 @@ class TransactionInteractor:
         self.wallet_repository.update_balance(source.address, source.balance)
         self.wallet_repository.update_balance(destination.address, destination.balance)
 
-        self.transaction_repository.create_transaction(Transaction(
-            source=source.address,
-            destination=destination.address,
-            amount=request.amount,
-            fee=fee_amount
-        ))
+        self.transaction_repository.create_transaction(
+            Transaction(
+                source=source.address,
+                destination=destination.address,
+                amount=request.amount,
+                fee=fee_amount,
+            )
+        )
 
-        return Ok(MakeTransactionResponse(
-            amount_left_btc=source.balance / SATOSHI_IN_BTC
-        ))
+        return Ok(
+            MakeTransactionResponse(amount_left_btc=source.balance / SATOSHI_IN_BTC)
+        )
 
-    def get_transactions(self, request: GetTransactionsRequest) -> Result[GetTransactionsResponse, TransactionError]:
+    def get_transactions(
+        self, request: GetTransactionsRequest
+    ) -> Result[GetTransactionsResponse, TransactionError]:
         if self.user_repository.get_user(request.user_api_key) is None:
             return Err(TransactionError.USER_NOT_FOUND)
 
         if request.wallet_address is None:
-            return Ok(GetTransactionsResponse(
-                self.transaction_repository.get_all_user_transactions(request.user_api_key))
+            return Ok(
+                GetTransactionsResponse(
+                    self.transaction_repository.get_all_user_transactions(
+                        request.user_api_key
+                    )
+                )
             )
 
         wallet = self.wallet_repository.get_wallet(request.wallet_address)
         if wallet is None:
             return Err(TransactionError.WALLET_NOT_FOUND)
 
-        return Ok(GetTransactionsResponse(
-            self.transaction_repository.get_all_wallet_transactions(request.wallet_address)
-        ))
+        return Ok(
+            GetTransactionsResponse(
+                self.transaction_repository.get_all_wallet_transactions(
+                    request.wallet_address
+                )
+            )
+        )

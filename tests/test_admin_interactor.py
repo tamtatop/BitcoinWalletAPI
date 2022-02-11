@@ -2,7 +2,12 @@ from unittest.mock import MagicMock
 
 from result import Err, Ok
 
-from app.core.admin.interactor import ADMIN_KEY, AdminError, AdminInteractor, GetStatisticsRequest
+from app.core.admin.interactor import (
+    ADMIN_KEY,
+    AdminError,
+    AdminInteractor,
+    GetStatisticsRequest,
+)
 from app.core.transaction.entity import Transaction
 
 

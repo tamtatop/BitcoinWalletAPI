@@ -1,6 +1,7 @@
-from typing import Dict, Optional, Union
+from typing import Dict
 
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, Depends, HTTPException
+from result.result import Ok
 
 from app.core.facade import WalletService
 from app.core.wallet.interactor import (
@@ -12,14 +13,13 @@ from app.core.wallet.interactor import (
 )
 from app.infra.fastapi.dependables import get_core
 
-
 # TODO: fancy builder error handling
 error_message: Dict[WalletError, str] = {
     WalletError.USER_NOT_FOUND: "User not found",
     WalletError.WALLET_NOT_FOUND: "Wallet not found",
     WalletError.WALLET_LIMIT_REACHED: f"Cannot create more than {MAX_WALLETS_PER_PERSON} wallets",
     WalletError.UNSUPPORTED_CURRENCY: "Unsupported Currency",
-    WalletError.NOT_THIS_USERS_WALLET: "Provided wallet doesn't belong to provided user"
+    WalletError.NOT_THIS_USERS_WALLET: "Provided wallet doesn't belong to provided user",
 }
 
 wallet_api = APIRouter()
@@ -32,7 +32,7 @@ def create_wallet(
     request = CreateWalletRequest(user_api_key=api_key)
     wallet_created_response = core.create_wallet(request)
 
-    if wallet_created_response.is_ok():
+    if isinstance(wallet_created_response, Ok):
         return wallet_created_response.value
     else:
         raise HTTPException(
@@ -48,7 +48,7 @@ def get_wallet(
 
     get_wallet_response = core.get_wallet(request)
 
-    if get_wallet_response.is_ok():
+    if isinstance(get_wallet_response, Ok):
         return get_wallet_response.value
     else:
         raise HTTPException(

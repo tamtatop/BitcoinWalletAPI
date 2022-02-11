@@ -1,8 +1,10 @@
-from result import Err, Ok, Result
+import random
 from enum import Enum
 from typing import Protocol
-import random
+
 import httpx
+from result import Err, Ok, Result
+
 from app.core.btc_constants import SATOSHI_IN_BTC
 
 
@@ -19,34 +21,36 @@ class ConversionError(Enum):
 
 class ICurrencyConverter(Protocol):
     def convert_btc_to_fiat(
-            self, satoshis: int, currency: FiatCurrency
+        self, satoshis: int, currency: FiatCurrency
     ) -> Result[float, ConversionError]:
         raise NotImplementedError()
 
 
 class BlockChainTickerCurrencyConverter:
-    API_URL = 'https://blockchain.info/ticker'
+    API_URL = "https://blockchain.info/ticker"
     fiat_currency_str = {
-        FiatCurrency.USD: 'USD',
-        FiatCurrency.EUR: 'EUR',
-        FiatCurrency.RUB: 'RUB',
+        FiatCurrency.USD: "USD",
+        FiatCurrency.EUR: "EUR",
+        FiatCurrency.RUB: "RUB",
     }
 
     def convert_btc_to_fiat(
-            self, satoshis: int, currency: FiatCurrency
+        self, satoshis: int, currency: FiatCurrency
     ) -> Result[float, ConversionError]:
         response = httpx.get(BlockChainTickerCurrencyConverter.API_URL)
 
         if currency not in BlockChainTickerCurrencyConverter.fiat_currency_str:
             return Err(ConversionError.UNSUPPORTED_CURRENCY)
 
-        last_conversion_rate = response.json()[BlockChainTickerCurrencyConverter.fiat_currency_str[currency]]['last']
+        last_conversion_rate = response.json()[
+            BlockChainTickerCurrencyConverter.fiat_currency_str[currency]
+        ]["last"]
 
         return Ok((satoshis / SATOSHI_IN_BTC) * last_conversion_rate)
 
 
 class RandomCurrencyConverter:
     def convert_btc_to_fiat(
-            self, satoshis: int, currency: FiatCurrency
+        self, satoshis: int, currency: FiatCurrency
     ) -> Result[float, ConversionError]:
         return Ok(random.random())

@@ -6,7 +6,11 @@ from typing import Callable, List, Optional, Protocol
 from result import Err, Ok, Result
 
 from app.core.btc_constants import INITIAL_WALLET_VALUE_SATOSHIS, SATOSHI_IN_BTC
-from app.core.currency_converter import ICurrencyConverter, ConversionError, FiatCurrency
+from app.core.currency_converter import (
+    ConversionError,
+    FiatCurrency,
+    ICurrencyConverter,
+)
 from app.core.user.interactor import IUserRepository
 
 
@@ -53,7 +57,7 @@ def generate_wallet_address() -> str:
 
 class IWalletRepository(Protocol):
     def create_wallet(
-            self, user_api_key: str, wallet_address: str, initial_balance: int
+        self, user_api_key: str, wallet_address: str, initial_balance: int
     ) -> Wallet:
         raise NotImplementedError()
 
@@ -69,12 +73,12 @@ class IWalletRepository(Protocol):
 
 class IWalletInteractor(Protocol):
     def create_wallet(
-            self, request: CreateWalletRequest
+        self, request: CreateWalletRequest
     ) -> Result[WalletResponse, WalletError]:
         raise NotImplementedError()
 
     def get_wallet(
-            self, request: GetWalletRequest
+        self, request: GetWalletRequest
     ) -> Result[WalletResponse, WalletError]:
         raise NotImplementedError()
 
@@ -90,7 +94,7 @@ class WalletInteractor:
     wallet_address_creator: ApiKeyGenerator
 
     def create_wallet(
-            self, request: CreateWalletRequest
+        self, request: CreateWalletRequest
     ) -> Result[WalletResponse, WalletError]:
         if self.user_repository.get_user(request.user_api_key) is None:
             return Err(WalletError.USER_NOT_FOUND)
@@ -112,19 +116,19 @@ class WalletInteractor:
             satoshis=wallet.balance, currency=FiatCurrency.USD
         )
 
-        if converted_to_fiat.is_err():
+        if isinstance(converted_to_fiat, Err):
             return Err(WalletError.UNSUPPORTED_CURRENCY)
 
         return Ok(
             WalletResponse(
                 wallet_address=wallet.address,
-                balance_btc=wallet.balance/SATOSHI_IN_BTC,
+                balance_btc=wallet.balance / SATOSHI_IN_BTC,
                 balance_usd=converted_to_fiat.value,
             )
         )
 
     def get_wallet(
-            self, request: GetWalletRequest
+        self, request: GetWalletRequest
     ) -> Result[WalletResponse, WalletError]:
         if self.user_repository.get_user(request.user_api_key) is None:
             return Err(WalletError.USER_NOT_FOUND)
@@ -141,13 +145,13 @@ class WalletInteractor:
             satoshis=wallet.balance, currency=FiatCurrency.USD
         )
 
-        if not converted_to_fiat.is_ok():
+        if isinstance(converted_to_fiat, Err):
             return Err(WalletError.UNSUPPORTED_CURRENCY)
 
         return Ok(
             WalletResponse(
                 wallet_address=wallet.address,
-                balance_btc=wallet.balance/SATOSHI_IN_BTC,
+                balance_btc=wallet.balance / SATOSHI_IN_BTC,
                 balance_usd=converted_to_fiat.value,
             )
         )

@@ -1,10 +1,9 @@
 import sqlite3
 from dataclasses import dataclass
-from typing import Optional, List
+from typing import List, Optional
 
-from result import Result
+from app.core.wallet.interactor import Wallet
 
-from app.core.wallet.interactor import IWalletRepository, Wallet, WalletError
 INITIAL_BALANCE = 1
 
 
@@ -24,17 +23,18 @@ class WalletRepository:
         self.conn.commit()
 
     def create_wallet(
-            self, user_api_key: str, wallet_address: str, initial_balance: int
+        self, user_api_key: str, wallet_address: str, initial_balance: int
     ) -> Wallet:
         self.conn.execute(
-            " INSERT INTO Wallet VALUES (?, ?, ?)", (wallet_address, user_api_key, initial_balance)
+            " INSERT INTO Wallet VALUES (?, ?, ?)",
+            (wallet_address, user_api_key, initial_balance),
         )
         self.conn.commit()
         return Wallet(wallet_address, user_api_key, initial_balance)
 
     def get_wallet(self, wallet_address: str) -> Optional[Wallet]:
         for row in self.conn.execute(
-                " SELECT * FROM Wallet WHERE address = ?", (wallet_address,)
+            " SELECT * FROM Wallet WHERE address = ?", (wallet_address,)
         ):
             return Wallet(*row)
         return None
@@ -42,7 +42,7 @@ class WalletRepository:
     def get_user_wallets(self, user_api_key: str) -> List[Wallet]:
         wallets: List[Wallet] = list()
         for row in self.conn.execute(
-                " SELECT * FROM Wallet WHERE owner_key = ?", (user_api_key,)
+            " SELECT * FROM Wallet WHERE owner_key = ?", (user_api_key,)
         ):
             wallets.append(Wallet(*row))
 
@@ -57,4 +57,3 @@ class WalletRepository:
             ),
         )
         self.conn.commit()
-

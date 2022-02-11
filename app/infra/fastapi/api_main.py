@@ -3,7 +3,6 @@ from fastapi.applications import FastAPI
 from app.core.facade import WalletService
 from app.infra.fastapi.admin import admin_api
 from app.infra.fastapi.transaction import transaction_api
-
 from app.infra.fastapi.user import user_api
 from app.infra.fastapi.wallet import wallet_api
 
