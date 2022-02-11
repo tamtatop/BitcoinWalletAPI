@@ -2,10 +2,7 @@ import uuid
 from dataclasses import dataclass
 from typing import Callable, Optional, Protocol
 
-
-@dataclass
-class User:
-    api_key: str
+from app.core.user.entity import User
 
 
 @dataclass

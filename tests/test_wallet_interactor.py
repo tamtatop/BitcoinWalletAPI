@@ -5,16 +5,17 @@ from result.result import Err
 
 from app.core.btc_constants import INITIAL_WALLET_VALUE_SATOSHIS, SATOSHI_IN_BTC
 from app.core.currency_converter import ConversionError, FiatCurrency
-from app.core.user.interactor import IUserRepository, User
+from app.core.user.interactor import IUserRepository
+from app.core.user.entity import User
 from app.core.wallet.interactor import (
     CreateWalletRequest,
     GetWalletRequest,
     IWalletRepository,
-    Wallet,
     WalletError,
     WalletInteractor,
     WalletResponse,
 )
+from app.core.wallet.entity import Wallet
 
 
 class FakeCurrencyConverter:

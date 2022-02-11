@@ -1,7 +1,6 @@
-import uuid
 from dataclasses import dataclass
 from enum import Enum
-from typing import Callable, List, Optional, Protocol
+from typing import List, Optional, Protocol
 
 from result import Err, Ok, Result
 
@@ -11,7 +10,9 @@ from app.core.currency_converter import (
     FiatCurrency,
     ICurrencyConverter,
 )
+from app.core.key_generator import ApiKeyGenerator
 from app.core.user.interactor import IUserRepository
+from app.core.wallet.entity import Wallet
 
 
 class WalletError(Enum):
@@ -20,13 +21,6 @@ class WalletError(Enum):
     WALLET_LIMIT_REACHED = 2
     UNSUPPORTED_CURRENCY = 3
     NOT_THIS_USERS_WALLET = 4
-
-
-@dataclass
-class Wallet:
-    address: str
-    owner_key: str
-    balance: int
 
 
 @dataclass
@@ -45,14 +39,6 @@ class CreateWalletRequest:
 class GetWalletRequest:
     user_api_key: str
     wallet_address: str
-
-
-# TODO: Update it
-ApiKeyGenerator = Callable[[], str]
-
-
-def generate_wallet_address() -> str:
-    return uuid.uuid1().hex
 
 
 class IWalletRepository(Protocol):

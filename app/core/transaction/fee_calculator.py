@@ -1,6 +1,6 @@
 from typing import Protocol
 
-from app.core.wallet.interactor import Wallet
+from app.core.wallet.entity import Wallet
 
 
 class IFeeCalculator(Protocol):

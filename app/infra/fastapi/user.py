@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 
 from app.core.facade import WalletService
-from app.core.user.interactor import User
+from app.core.user.entity import User
 from app.infra.fastapi.dependables import get_core
 
 user_api = APIRouter()

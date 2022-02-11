@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Dict, Optional
 
-from app.core.user.interactor import User
+from app.core.user.entity import User
 
 
 @dataclass

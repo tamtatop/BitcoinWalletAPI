@@ -1,7 +1,7 @@
 from dataclasses import dataclass, field
 from typing import List, Optional
 
-from app.core.wallet.interactor import Wallet
+from app.core.wallet.entity import Wallet
 
 
 @dataclass

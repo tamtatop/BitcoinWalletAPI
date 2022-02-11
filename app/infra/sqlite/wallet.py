@@ -2,7 +2,7 @@ import sqlite3
 from dataclasses import dataclass
 from typing import List, Optional
 
-from app.core.wallet.interactor import Wallet
+from app.core.wallet.entity import Wallet
 
 INITIAL_BALANCE = 1
 

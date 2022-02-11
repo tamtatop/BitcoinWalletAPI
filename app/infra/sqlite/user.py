@@ -2,7 +2,7 @@ import sqlite3
 from dataclasses import dataclass
 from typing import Optional
 
-from app.core.user.interactor import User
+from app.core.user.entity import User
 
 
 @dataclass
