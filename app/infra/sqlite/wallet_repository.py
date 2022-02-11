@@ -23,19 +23,20 @@ class WalletRepository:
         )
         self.conn.commit()
 
-    def create_wallet(self, address: str, user_api_key: str, initial_balance: int) -> Wallet:
+    def create_wallet(
+            self, user_api_key: str, wallet_address: str, initial_balance: int
+    ) -> Wallet:
         self.conn.execute(
-            " INSERT INTO Wallet VALUES (?, ?, ?)", (address, user_api_key, initial_balance)
+            " INSERT INTO Wallet VALUES (?, ?, ?)", (wallet_address, user_api_key, initial_balance)
         )
         self.conn.commit()
-        return Wallet(address, user_api_key, initial_balance)
+        return Wallet(wallet_address, user_api_key, initial_balance)
 
     def get_wallet(self, wallet_address: str) -> Optional[Wallet]:
         for row in self.conn.execute(
                 " SELECT * FROM Wallet WHERE address = ?", (wallet_address,)
         ):
             return Wallet(*row)
-
         return None
 
     def get_user_wallets(self, user_api_key: str) -> List[Wallet]:
@@ -47,14 +48,13 @@ class WalletRepository:
 
         return wallets
 
-    def update_balance(self, wallet_address: str, amount: int) -> Optional[Wallet]:
+    def update_balance(self, wallet_address: str, balance: int) -> None:
         self.conn.execute(
             "UPDATE Wallet SET balance = ? WHERE address = ?",
             (
-                amount,
+                balance,
                 wallet_address,
             ),
         )
         self.conn.commit()
-        return self.get_wallet(wallet_address)
 

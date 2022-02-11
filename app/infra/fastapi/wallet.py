@@ -3,12 +3,10 @@ from typing import Dict, Optional, Union
 from fastapi import APIRouter, Depends, HTTPException, Response
 
 from app.core.facade import WalletService
-from app.core.user.interactor import User, UserCreatedResponse
 from app.core.wallet.interactor import (
     MAX_WALLETS_PER_PERSON,
     CreateWalletRequest,
     GetWalletRequest,
-    Wallet,
     WalletError,
     WalletResponse,
 )

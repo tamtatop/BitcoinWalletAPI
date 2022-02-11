@@ -2,64 +2,12 @@ import uuid
 from dataclasses import dataclass
 from enum import Enum
 from typing import Callable, List, Optional, Protocol
-import random
-import httpx
-
 
 from result import Err, Ok, Result
 
+from app.core.btc_constants import INITIAL_WALLET_VALUE_SATOSHIS, SATOSHI_IN_BTC
+from app.core.currency_converter import ICurrencyConverter, ConversionError, FiatCurrency
 from app.core.user.interactor import IUserRepository
-
-MAX_WALLETS_PER_PERSON = 3
-SATOSHI_IN_BTC = 100000000
-INITIAL_WALLET_VALUE_SATOSHIS = SATOSHI_IN_BTC
-
-class FiatCurrency(Enum):
-    GEL = 0
-    USD = 1
-    EUR = 2
-    RUB = 3
-
-
-class ConversionError(Enum):
-    UNSUPPORTED_CURRENCY = 1
-
-
-class ICurrencyConverter(Protocol):
-    def convert_btc_to_fiat(
-        self, satoshis: int, currency: FiatCurrency
-    ) -> Result[float, ConversionError]:
-        raise NotImplementedError()
-
-
-class CurrencyConverter:
-    def convert_btc_to_fiat(
-        self, satoshis: int, currency: FiatCurrency
-    ) -> Result[float, ConversionError]:
-        fiat_currency_str = {
-            FiatCurrency.USD: 'USD',
-            FiatCurrency.EUR: 'EUR',
-            FiatCurrency.RUB: 'RUB',
-        }
-
-        response = httpx.get('https://blockchain.info/ticker')
-
-        if currency not in fiat_currency_str:
-            return Err(ConversionError.UNSUPPORTED_CURRENCY)
-
-        last_conversion_rate = response.json()[fiat_currency_str[currency]]['last']
-
-        return Ok((satoshis / SATOSHI_IN_BTC) * last_conversion_rate)
-
-
-
-
-
-class RandomCurrencyConverter:
-    def convert_btc_to_fiat(
-        self, satoshis: int, currency: FiatCurrency
-    ) -> Result[float, ConversionError]:
-        return Ok(random.random())
 
 
 class WalletError(Enum):
@@ -79,7 +27,7 @@ class Wallet:
 @dataclass
 class WalletResponse:
     wallet_address: str
-    balance_satoshi: int
+    balance_btc: float
     balance_usd: float
 
 
@@ -104,7 +52,7 @@ def generate_wallet_address() -> str:
 
 class IWalletRepository(Protocol):
     def create_wallet(
-        self, user_api_key: str, wallet_address: str, init_balance: int
+            self, user_api_key: str, wallet_address: str, initial_balance: int
     ) -> Wallet:
         raise NotImplementedError()
 
@@ -114,17 +62,23 @@ class IWalletRepository(Protocol):
     def get_user_wallets(self, user_api_key: str) -> List[Wallet]:
         raise NotImplementedError()
 
+    def update_balance(self, wallet_address: str, balance: int) -> None:
+        raise NotImplementedError()
+
 
 class IWalletInteractor(Protocol):
     def create_wallet(
-        self, request: CreateWalletRequest
+            self, request: CreateWalletRequest
     ) -> Result[WalletResponse, WalletError]:
         raise NotImplementedError()
 
     def get_wallet(
-        self, request: GetWalletRequest
+            self, request: GetWalletRequest
     ) -> Result[WalletResponse, WalletError]:
         raise NotImplementedError()
+
+
+MAX_WALLETS_PER_PERSON = 3
 
 
 @dataclass
@@ -135,7 +89,7 @@ class WalletInteractor:
     wallet_address_creator: ApiKeyGenerator
 
     def create_wallet(
-        self, request: CreateWalletRequest
+            self, request: CreateWalletRequest
     ) -> Result[WalletResponse, WalletError]:
         if self.user_repository.get_user(request.user_api_key) is None:
             return Err(WalletError.USER_NOT_FOUND)
@@ -163,13 +117,13 @@ class WalletInteractor:
         return Ok(
             WalletResponse(
                 wallet_address=wallet.address,
-                balance_satoshi=wallet.balance,
+                balance_btc=wallet.balance/SATOSHI_IN_BTC,
                 balance_usd=converted_to_fiat.value,
             )
         )
 
     def get_wallet(
-        self, request: GetWalletRequest
+            self, request: GetWalletRequest
     ) -> Result[WalletResponse, WalletError]:
         if self.user_repository.get_user(request.user_api_key) is None:
             return Err(WalletError.USER_NOT_FOUND)
@@ -190,7 +144,7 @@ class WalletInteractor:
         return Ok(
             WalletResponse(
                 wallet_address=wallet.address,
-                balance_satoshi=wallet.balance,
+                balance_btc=wallet.balance/SATOSHI_IN_BTC,
                 balance_usd=converted_to_fiat.value,
             )
         )

@@ -9,9 +9,9 @@ class InMemoryWalletRepository:
     data: List[Wallet] = field(default_factory=list)
 
     def create_wallet(
-        self, user_api_key: str, wallet_address: str, init_balance: int
+        self, user_api_key: str, wallet_address: str, initial_balance: int
     ) -> Wallet:
-        wallet = Wallet(wallet_address, user_api_key, init_balance)
+        wallet = Wallet(wallet_address, user_api_key, initial_balance)
         self.data.append(wallet)
         return wallet
 
@@ -23,3 +23,6 @@ class InMemoryWalletRepository:
 
     def get_user_wallets(self, user_api_key: str) -> List[Wallet]:
         return [w for w in self.data if w.owner_key == user_api_key]
+
+    def update_balance(self, wallet_address: str, balance: int) -> None:
+        self.get_wallet(wallet_address).balance = balance

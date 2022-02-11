@@ -2,7 +2,8 @@ from unittest.mock import MagicMock
 
 from result import Ok, Result
 
-from app.core.user.interactor import User
+from app.core.btc_constants import SATOSHI_IN_BTC
+from app.core.user.interactor import User, IUserRepository
 from app.core.wallet.interactor import (
     INITIAL_WALLET_VALUE_SATOSHIS,
     ConversionError,
@@ -12,7 +13,7 @@ from app.core.wallet.interactor import (
     Wallet,
     WalletError,
     WalletInteractor,
-    WalletResponse,
+    WalletResponse, IWalletRepository,
 )
 from app.infra.inmemory.user import InMemoryUserRepository
 from app.infra.inmemory.wallet import InMemoryWalletRepository
@@ -59,13 +60,11 @@ def test_create_wallet_magin_mock() -> None:
 
     assert isinstance(response, Ok)
     assert response.value.wallet_address == wallet_address
-    assert response.value.balance_satoshi == INITIAL_WALLET_VALUE_SATOSHIS
+    assert response.value.balance_btc == INITIAL_WALLET_VALUE_SATOSHIS / SATOSHI_IN_BTC
     assert response.value.balance_usd == INITIAL_WALLET_VALUE_SATOSHIS * 2
 
 
-def test_create_wallet_im() -> None:
-    wallet_repository = InMemoryWalletRepository()
-    user_repository = InMemoryUserRepository()
+def test_create_wallet_im(wallet_repository: IWalletRepository, user_repository: IUserRepository) -> None:
 
     test_user_api = "Dummy Key"
 
@@ -83,9 +82,9 @@ def test_create_wallet_im() -> None:
     assert result_err_no_user.value == WalletError.USER_NOT_FOUND
 
     result_ok = interactor.create_wallet(CreateWalletRequest(test_user_api))
-    assert result_ok.is_ok()
+    assert isinstance(result_ok, Ok)
     assert result_ok.value.wallet_address == wallet_address_creator()
-    assert result_ok.value.balance_satoshi == INITIAL_WALLET_VALUE_SATOSHIS
+    assert result_ok.value.balance_btc == INITIAL_WALLET_VALUE_SATOSHIS / SATOSHI_IN_BTC
     assert result_ok.value.balance_usd == INITIAL_WALLET_VALUE_SATOSHIS * 2
 
     interactor.create_wallet(CreateWalletRequest(test_user_api))
@@ -98,10 +97,7 @@ def test_create_wallet_im() -> None:
     assert result_err_wallet_limit.value == WalletError.WALLET_LIMIT_REACHED
 
 
-def test_get_wallet_im() -> None:
-    wallet_repository = InMemoryWalletRepository()
-    user_repository = InMemoryUserRepository()
-
+def test_get_wallet_im(wallet_repository: IWalletRepository, user_repository: IUserRepository) -> None:
     test_user_api = "Dummy Key"
 
     user_repository.create_user(test_user_api)
@@ -130,5 +126,23 @@ def test_get_wallet_im() -> None:
         GetWalletRequest(test_user_api, new_wallet.wallet_address)
     )
     assert wallet.value.wallet_address == new_wallet.wallet_address
-    assert wallet.value.balance_satoshi == new_wallet.balance_satoshi
+    assert wallet.value.balance_btc == new_wallet.balance_btc
     assert wallet.value.balance_usd == new_wallet.balance_usd
+
+
+def test_update_balance_im(wallet_repository: IWalletRepository) -> None:
+    test_user_api_key = "dummy key"
+    test_wallet_address = "dummy address"
+    test_init_balance = 1
+    test_new_balance = 10000
+
+    wallet_repository.create_wallet(
+        test_user_api_key, test_wallet_address, test_init_balance
+    )
+
+    pre_check = wallet_repository.get_wallet(test_wallet_address)
+    assert pre_check.balance == test_init_balance
+
+    wallet_repository.update_balance(test_wallet_address, test_new_balance)
+    new_check = wallet_repository.get_wallet(test_wallet_address)
+    assert new_check.balance == test_new_balance
