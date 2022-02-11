@@ -15,6 +15,7 @@ class WalletError(Enum):
     WALLET_NOT_FOUND = 1
     WALLET_LIMIT_REACHED = 2
     UNSUPPORTED_CURRENCY = 3
+    NOT_THIS_USERS_WALLET = 4
 
 
 @dataclass
@@ -131,6 +132,8 @@ class WalletInteractor:
         wallet = self.wallet_repository.get_wallet(request.wallet_address)
         if wallet is None:
             return Err(WalletError.WALLET_NOT_FOUND)
+        if wallet.owner_key != request.user_api_key:
+            return Err(WalletError.NOT_THIS_USERS_WALLET)
 
         converted_to_fiat: Result[
             float, ConversionError

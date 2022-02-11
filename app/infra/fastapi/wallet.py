@@ -19,6 +19,7 @@ error_message: Dict[WalletError, str] = {
     WalletError.WALLET_NOT_FOUND: "Wallet not found",
     WalletError.WALLET_LIMIT_REACHED: f"Cannot create more than {MAX_WALLETS_PER_PERSON} wallets",
     WalletError.UNSUPPORTED_CURRENCY: "Unsupported Currency",
+    WalletError.NOT_THIS_USERS_WALLET: "Provided wallet doesn't belong to provided user"
 }
 
 wallet_api = APIRouter()
