@@ -15,6 +15,7 @@ from app.core.wallet.interactor import (
     WalletError,
     WalletInteractor,
     WalletResponse,
+    IWalletInteractor,
 )
 
 
@@ -96,6 +97,90 @@ def test_create_wallet(
     )
     assert isinstance(result_err_wallet_limit, Err)
     assert result_err_wallet_limit.value == WalletError.WALLET_LIMIT_REACHED
+
+
+def test_create_wallet_user_not_found_no_user(
+    wallet_interactor: IWalletInteractor, user_repository: IUserRepository
+) -> None:
+    wallet_creating_attempt_with_no_user = wallet_interactor.create_wallet(
+        CreateWalletRequest("")
+    )
+    assert isinstance(wallet_creating_attempt_with_no_user, Err)
+    assert wallet_creating_attempt_with_no_user.value == WalletError.USER_NOT_FOUND
+
+
+def test_create_wallet_user_not_found_fake_user(
+    wallet_interactor: IWalletInteractor, user_repository: IUserRepository
+) -> None:
+    fake_user_api = "Fake Key"
+    wallet_creating_attempt_with_fake_user = wallet_interactor.create_wallet(
+        CreateWalletRequest(fake_user_api)
+    )
+    assert isinstance(wallet_creating_attempt_with_fake_user, Err)
+    assert wallet_creating_attempt_with_fake_user.value == WalletError.USER_NOT_FOUND
+
+
+def test_create_wallet_with_correct_user(
+    wallet_interactor: IWalletInteractor, user_repository: IUserRepository
+) -> None:
+    test_user_api = "Dummy Key"
+    user_repository.create_user(test_user_api)
+
+    wallet_creating_attempt_with_real_api = wallet_interactor.create_wallet(
+        CreateWalletRequest(test_user_api)
+    )
+    assert isinstance(wallet_creating_attempt_with_real_api, Ok)
+
+    successfully_created_wallet = wallet_creating_attempt_with_real_api.value
+    assert successfully_created_wallet.wallet_address == wallet_address_creator()
+    assert (
+        successfully_created_wallet.balance_btc
+        == INITIAL_WALLET_VALUE_SATOSHIS / SATOSHI_IN_BTC
+    )
+    assert successfully_created_wallet.balance_usd == INITIAL_WALLET_VALUE_SATOSHIS * 2
+
+
+def test_create_wallet_multiple_wallets(
+    wallet_interactor: IWalletInteractor,
+    user_repository: IUserRepository,
+    wallet_repository: IWalletRepository,
+) -> None:
+    test_user_api = "Dummy Key"
+    user_repository.create_user(test_user_api)
+
+    assert len(wallet_repository.get_user_wallets(test_user_api)) == 0
+    assert isinstance(
+        wallet_interactor.create_wallet(CreateWalletRequest(test_user_api)), Ok
+    )
+    assert len(wallet_repository.get_user_wallets(test_user_api)) == 1
+    assert isinstance(
+        wallet_interactor.create_wallet(CreateWalletRequest(test_user_api)), Ok
+    )
+    assert len(wallet_repository.get_user_wallets(test_user_api)) == 2
+    assert isinstance(
+        wallet_interactor.create_wallet(CreateWalletRequest(test_user_api)), Ok
+    )
+    assert len(wallet_repository.get_user_wallets(test_user_api)) == 3
+
+
+def test_create_wallet_limit_reached(
+    wallet_interactor: IWalletInteractor, user_repository: IUserRepository
+) -> None:
+    test_user_api = "Dummy Key"
+    user_repository.create_user(test_user_api)
+
+    wallet_interactor.create_wallet(CreateWalletRequest(test_user_api))
+    wallet_interactor.create_wallet(CreateWalletRequest(test_user_api))
+    wallet_interactor.create_wallet(CreateWalletRequest(test_user_api))
+
+    wallet_creating_attempt_with_limit_reached = wallet_interactor.create_wallet(
+        CreateWalletRequest(test_user_api)
+    )
+    assert isinstance(wallet_creating_attempt_with_limit_reached, Err)
+    assert (
+        wallet_creating_attempt_with_limit_reached.value
+        == WalletError.WALLET_LIMIT_REACHED
+    )
 
 
 def test_get_wallet(
