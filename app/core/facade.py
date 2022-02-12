@@ -11,6 +11,7 @@ from app.core.admin.interactor import (
     IAdminRepository,
 )
 from app.core.currency_converter import BlockChainTickerCurrencyConverter
+from app.core.key_generator import generate_new_user_key, generate_wallet_address
 from app.core.transaction.fee_calculator import FeeCalculator
 from app.core.transaction.interactor import (
     GetTransactionsRequest,
@@ -27,7 +28,6 @@ from app.core.user.interactor import (
     IUserRepository,
     UserCreatedResponse,
     UserInteractor,
-    generate_new_unique_key,
 )
 from app.core.wallet.interactor import (
     CreateWalletRequest,
@@ -84,12 +84,12 @@ class WalletService:
         admin_repository: IAdminRepository,
     ) -> "WalletService":
         return cls(
-            UserInteractor(user_repository, generate_new_unique_key),
+            UserInteractor(user_repository, generate_new_user_key),
             WalletInteractor(
                 wallet_repository,
                 user_repository,
                 BlockChainTickerCurrencyConverter(),
-                generate_new_unique_key,
+                generate_wallet_address,
             ),
             TransactionInteractor(
                 transaction_repository,

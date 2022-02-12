@@ -3,11 +3,28 @@ from typing import Protocol
 import pytest
 from _pytest.config.argparsing import Parser
 
-from app.core.admin.interactor import IAdminRepository
+from app.core.admin.interactor import (
+    IAdminRepository,
+    IAdminInteractor,
+    AdminInteractor,
+)
 from app.core.currency_converter import ICurrencyConverter, RandomCurrencyConverter
-from app.core.key_generator import ApiKeyGenerator, generate_wallet_address
-from app.core.transaction.interactor import ITransactionRepository
-from app.core.user.interactor import IUserRepository
+from app.core.key_generator import (
+    ApiKeyGenerator,
+    generate_wallet_address,
+    generate_new_user_key,
+)
+from app.core.transaction.fee_calculator import IFeeCalculator, FeeCalculator
+from app.core.transaction.interactor import (
+    ITransactionRepository,
+    ITransactionInteractor,
+    TransactionInteractor,
+)
+from app.core.user.interactor import (
+    IUserRepository,
+    UserInteractor,
+    IUserInteractor,
+)
 from app.core.wallet.interactor import (
     IWalletRepository,
     IWalletInteractor,
@@ -123,4 +140,39 @@ def wallet_interactor_real_generator(
         user_repository,
         currency_convertor,
         wallet_address_creator_real_fun,
+    )
+
+
+@pytest.fixture(scope="function")
+def api_key_creator(request: pytest.FixtureRequest) -> ApiKeyGenerator:
+    return generate_new_user_key
+
+
+@pytest.fixture(scope="function")
+def user_interactor(
+    user_repository: IUserRepository,
+    api_key_creator: ApiKeyGenerator,
+) -> IUserInteractor:
+    return UserInteractor(user_repository, api_key_creator)
+
+
+@pytest.fixture(scope="function")
+def admin_interactor(admin_repository: IAdminRepository) -> IAdminInteractor:
+    return AdminInteractor(admin_repository)
+
+
+@pytest.fixture(scope="function")
+def fee_calculator(request: pytest.FixtureRequest) -> ApiKeyGenerator:
+    return FeeCalculator()
+
+
+@pytest.fixture(scope="function")
+def transaction_interactor(
+    transaction_repository: ITransactionRepository,
+    user_repository: IUserRepository,
+    wallet_repository: IWalletRepository,
+    fee_calculator: IFeeCalculator,
+) -> ITransactionInteractor:
+    return TransactionInteractor(
+        transaction_repository, user_repository, wallet_repository, fee_calculator
     )

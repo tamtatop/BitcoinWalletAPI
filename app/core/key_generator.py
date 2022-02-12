@@ -5,4 +5,8 @@ ApiKeyGenerator = Callable[[], str]
 
 
 def generate_wallet_address() -> str:
-    return uuid.uuid1().hex
+    return "wallet-" + uuid.uuid1().hex
+
+
+def generate_new_user_key() -> str:
+    return "user-" + uuid.uuid1().hex

@@ -1,11 +1,11 @@
 from unittest.mock import MagicMock
 
+from app.core.key_generator import generate_new_user_key
 from app.core.user.entity import User
 from app.core.user.interactor import (
     IUserRepository,
     UserCreatedResponse,
     UserInteractor,
-    generate_new_unique_key,
 )
 
 
@@ -13,14 +13,14 @@ def test_unique_api_keys() -> None:
     keys = set()
     n = 1000
     for _ in range(n):
-        keys.add(generate_new_unique_key())
+        keys.add(generate_new_user_key())
     assert len(keys) == n
 
 
 def test_keys_unique_for_users() -> None:
     fake_repository = MagicMock()
     fake_repository.create_user = lambda api_key: User(api_key=api_key)
-    user_interactor = UserInteractor(fake_repository, generate_new_unique_key)
+    user_interactor = UserInteractor(fake_repository, generate_new_user_key)
 
     keys = set()
     n = 1000
@@ -31,7 +31,7 @@ def test_keys_unique_for_users() -> None:
 
 
 def test_create_user(user_repository: IUserRepository) -> None:
-    interactor = UserInteractor(user_repository, generate_new_unique_key)
+    interactor = UserInteractor(user_repository, generate_new_user_key)
 
     response = interactor.create_user()
 
@@ -41,7 +41,7 @@ def test_create_user(user_repository: IUserRepository) -> None:
 
 
 def test_create_many_user(user_repository: IUserRepository) -> None:
-    interactor = UserInteractor(user_repository, generate_new_unique_key)
+    interactor = UserInteractor(user_repository, generate_new_user_key)
 
     user_responses = [interactor.create_user() for _ in range(100)]
 
