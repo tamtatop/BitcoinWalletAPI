@@ -92,6 +92,11 @@ def wallet_address_creator_fun(request: pytest.FixtureRequest) -> ApiKeyGenerato
 
 
 @pytest.fixture(scope="function")
+def wallet_address_creator_real_fun(request: pytest.FixtureRequest) -> ApiKeyGenerator:
+    return generate_wallet_address
+
+
+@pytest.fixture(scope="function")
 def wallet_interactor(
     wallet_repository: IWalletRepository,
     user_repository: IUserRepository,
@@ -103,4 +108,19 @@ def wallet_interactor(
         user_repository,
         currency_convertor,
         wallet_address_creator_fun,
+    )
+
+
+@pytest.fixture(scope="function")
+def wallet_interactor_real_generator(
+    wallet_repository: IWalletRepository,
+    user_repository: IUserRepository,
+    currency_convertor: ICurrencyConverter,
+    wallet_address_creator_real_fun: ApiKeyGenerator,
+) -> IWalletInteractor:
+    return WalletInteractor(
+        wallet_repository,
+        user_repository,
+        currency_convertor,
+        wallet_address_creator_real_fun,
     )

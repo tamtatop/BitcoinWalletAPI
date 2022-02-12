@@ -101,6 +101,26 @@ def test_update_balance(
     assert b_wallet.balance == 1
 
 
+def test_update_balance_additional(wallet_repository: IWalletRepository) -> None:
+    test_user_api_key = "dummy key"
+    test_wallet_address = "dummy address"
+    test_init_balance = 1
+    test_new_balance = 10000
+
+    wallet_repository.create_wallet(
+        test_user_api_key, test_wallet_address, test_init_balance
+    )
+
+    pre_check = wallet_repository.get_wallet(test_wallet_address)
+    assert pre_check is not None
+    assert pre_check.balance == test_init_balance
+
+    wallet_repository.update_balance(test_wallet_address, test_new_balance)
+    new_check = wallet_repository.get_wallet(test_wallet_address)
+    assert new_check is not None
+    assert new_check.balance == test_new_balance
+
+
 def test_create_transaction(
     user_repository: IUserRepository,
     wallet_repository: IWalletRepository,

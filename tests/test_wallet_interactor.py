@@ -218,21 +218,111 @@ def test_get_wallet(
     assert wallet.value.balance_usd == new_wallet.balance_usd
 
 
-def test_update_balance(wallet_repository: IWalletRepository) -> None:
-    test_user_api_key = "dummy key"
-    test_wallet_address = "dummy address"
-    test_init_balance = 1
-    test_new_balance = 10000
+def test_get_wallet_user_not_found_no_user(
+    wallet_interactor: IWalletInteractor, user_repository: IUserRepository
+) -> None:
+    wallet_acquiring_attempt_with_no_user = wallet_interactor.get_wallet(
+        GetWalletRequest("", "aaa")
+    )
+    assert isinstance(wallet_acquiring_attempt_with_no_user, Err)
+    assert wallet_acquiring_attempt_with_no_user.value == WalletError.USER_NOT_FOUND
 
-    wallet_repository.create_wallet(
-        test_user_api_key, test_wallet_address, test_init_balance
+
+def test_get_wallet_user_not_found_fake_user(
+    wallet_interactor: IWalletInteractor, user_repository: IUserRepository
+) -> None:
+    fake_user_api = "Fake Key"
+    wallet_acquiring_attempt_with_fake_user = wallet_interactor.get_wallet(
+        GetWalletRequest(fake_user_api, "aaa")
+    )
+    assert isinstance(wallet_acquiring_attempt_with_fake_user, Err)
+    assert wallet_acquiring_attempt_with_fake_user.value == WalletError.USER_NOT_FOUND
+
+
+def test_get_wallet_wallet_not_found_no_wallet(
+    wallet_interactor: IWalletInteractor, user_repository: IUserRepository
+) -> None:
+    test_user_api = "Dummy Key"
+    user_repository.create_user(test_user_api)
+
+    wallet_acquiring_attempt_with_no_wallet = wallet_interactor.get_wallet(
+        GetWalletRequest(test_user_api, "aaa")
+    )
+    assert isinstance(wallet_acquiring_attempt_with_no_wallet, Err)
+    assert wallet_acquiring_attempt_with_no_wallet.value == WalletError.WALLET_NOT_FOUND
+
+
+def test_get_wallet_wallet_not_found_fake_wallet(
+    wallet_interactor: IWalletInteractor, user_repository: IUserRepository
+) -> None:
+    test_user_api = "Dummy Key"
+    user_repository.create_user(test_user_api)
+
+    fake_wallet_address = "Fake Address"
+    wallet_acquiring_attempt_with_fake_wallet = wallet_interactor.get_wallet(
+        GetWalletRequest(test_user_api, fake_wallet_address)
+    )
+    assert isinstance(wallet_acquiring_attempt_with_fake_wallet, Err)
+    assert (
+        wallet_acquiring_attempt_with_fake_wallet.value == WalletError.WALLET_NOT_FOUND
     )
 
-    pre_check = wallet_repository.get_wallet(test_wallet_address)
-    assert pre_check is not None
-    assert pre_check.balance == test_init_balance
 
-    wallet_repository.update_balance(test_wallet_address, test_new_balance)
-    new_check = wallet_repository.get_wallet(test_wallet_address)
-    assert new_check is not None
-    assert new_check.balance == test_new_balance
+def test_get_wallet_with_correct_user_matched_wallet(
+    wallet_interactor: IWalletInteractor, user_repository: IUserRepository
+) -> None:
+    test_user_api = "Dummy Key"
+    user_repository.create_user(test_user_api)
+
+    wallet_creating_attempt_with_real_api = wallet_interactor.create_wallet(
+        CreateWalletRequest(test_user_api)
+    )
+    successfully_created_wallet = wallet_creating_attempt_with_real_api.value
+    test_wallet_address = successfully_created_wallet.wallet_address
+
+    wallet_acquiring_attempt_with_real_api_matched_wallet = (
+        wallet_interactor.get_wallet(
+            GetWalletRequest(test_user_api, test_wallet_address)
+        )
+    )
+    assert isinstance(wallet_acquiring_attempt_with_real_api_matched_wallet, Ok)
+
+    successfully_acquired_wallet = (
+        wallet_acquiring_attempt_with_real_api_matched_wallet.value
+    )
+    assert successfully_acquired_wallet.wallet_address == test_wallet_address
+    assert (
+        successfully_acquired_wallet.balance_btc
+        == INITIAL_WALLET_VALUE_SATOSHIS / SATOSHI_IN_BTC
+    )
+    assert successfully_acquired_wallet.balance_usd == INITIAL_WALLET_VALUE_SATOSHIS * 2
+
+
+def test_get_wallet_with_correct_user_mismatched_wallet(
+    wallet_interactor_real_generator: IWalletInteractor,
+    user_repository: IUserRepository,
+) -> None:
+    first_test_user_api = "Dummy Key"
+    user_repository.create_user(first_test_user_api)
+
+    second_test_user_api = "Dummy Key As well"
+    user_repository.create_user(second_test_user_api)
+
+    wallet_creating_attempt_with_real_api = (
+        wallet_interactor_real_generator.create_wallet(
+            CreateWalletRequest(second_test_user_api)
+        )
+    )
+    successfully_created_second_wallet = wallet_creating_attempt_with_real_api.value
+    second_test_wallet_address = successfully_created_second_wallet.wallet_address
+
+    wallet_acquiring_attempt_with_real_api_mismatched_wallet = (
+        wallet_interactor_real_generator.get_wallet(
+            GetWalletRequest(first_test_user_api, second_test_wallet_address)
+        )
+    )
+    assert isinstance(wallet_acquiring_attempt_with_real_api_mismatched_wallet, Err)
+    assert (
+        wallet_acquiring_attempt_with_real_api_mismatched_wallet.value
+        == WalletError.NOT_THIS_USERS_WALLET
+    )
