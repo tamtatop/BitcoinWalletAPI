@@ -4,30 +4,26 @@ import pytest
 from _pytest.config.argparsing import Parser
 
 from app.core.admin.interactor import (
-    IAdminRepository,
-    IAdminInteractor,
     AdminInteractor,
+    IAdminInteractor,
+    IAdminRepository,
 )
-from app.core.currency_converter import ICurrencyConverter, RandomCurrencyConverter
+from app.core.currency_converter import ICurrencyConverter
 from app.core.key_generator import (
     ApiKeyGenerator,
-    generate_wallet_address,
     generate_new_user_key,
+    generate_wallet_address,
 )
-from app.core.transaction.fee_calculator import IFeeCalculator, FeeCalculator
+from app.core.transaction.fee_calculator import FeeCalculator, IFeeCalculator
 from app.core.transaction.interactor import (
-    ITransactionRepository,
     ITransactionInteractor,
+    ITransactionRepository,
     TransactionInteractor,
 )
-from app.core.user.interactor import (
-    IUserRepository,
-    UserInteractor,
-    IUserInteractor,
-)
+from app.core.user.interactor import IUserInteractor, IUserRepository, UserInteractor
 from app.core.wallet.interactor import (
-    IWalletRepository,
     IWalletInteractor,
+    IWalletRepository,
     WalletInteractor,
 )
 from app.infra.inmemory.transaction import InMemoryTransactionRepository
@@ -162,7 +158,7 @@ def admin_interactor(admin_repository: IAdminRepository) -> IAdminInteractor:
 
 
 @pytest.fixture(scope="function")
-def fee_calculator(request: pytest.FixtureRequest) -> ApiKeyGenerator:
+def fee_calculator(request: pytest.FixtureRequest) -> IFeeCalculator:
     return FeeCalculator()
 
 

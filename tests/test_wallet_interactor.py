@@ -11,11 +11,11 @@ from app.core.wallet.entity import Wallet
 from app.core.wallet.interactor import (
     CreateWalletRequest,
     GetWalletRequest,
+    IWalletInteractor,
     IWalletRepository,
     WalletError,
     WalletInteractor,
     WalletResponse,
-    IWalletInteractor,
 )
 
 
@@ -277,6 +277,7 @@ def test_get_wallet_with_correct_user_matched_wallet(
     wallet_creating_attempt_with_real_api = wallet_interactor.create_wallet(
         CreateWalletRequest(test_user_api)
     )
+    assert isinstance(wallet_creating_attempt_with_real_api, Ok)
     successfully_created_wallet = wallet_creating_attempt_with_real_api.value
     test_wallet_address = successfully_created_wallet.wallet_address
 
@@ -313,6 +314,7 @@ def test_get_wallet_with_correct_user_mismatched_wallet(
             CreateWalletRequest(second_test_user_api)
         )
     )
+    assert isinstance(wallet_creating_attempt_with_real_api, Ok)
     successfully_created_second_wallet = wallet_creating_attempt_with_real_api.value
     second_test_wallet_address = successfully_created_second_wallet.wallet_address
 

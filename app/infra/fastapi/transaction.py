@@ -1,6 +1,4 @@
-from typing import Dict
-
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from result import Ok
 
 from app.core.facade import WalletService
@@ -12,15 +10,34 @@ from app.core.transaction.interactor import (
     TransactionError,
 )
 from app.infra.fastapi.dependables import get_core
+from app.infra.fastapi.error_formatter import ErrorFormatterBuilder
 
-error_message: Dict[TransactionError, str] = {
-    TransactionError.USER_NOT_FOUND: "User not found",
-    TransactionError.WALLET_NOT_FOUND: "Wallet not found",
-    TransactionError.SOURCE_WALLET_NOT_FOUND: "Transactions's source wallet not found",
-    TransactionError.DESTINATION_WALLET_NOT_FOUND: "Transactions's destination wallet not found",
-    TransactionError.INCORRECT_API_KEY: "Incorrect Api Key",
-    TransactionError.NOT_ENOUGH_AMOUNT_ON_SOURCE_ACCOUNT: "Not enough coins on source account to complete transaction",
-}
+error_formatter = (
+    ErrorFormatterBuilder()
+    .add_error_with_status_code(TransactionError.USER_NOT_FOUND, "User not found", 404)
+    .add_error_with_status_code(
+        TransactionError.WALLET_NOT_FOUND, "Wallet not found", 404
+    )
+    .add_error_with_status_code(
+        TransactionError.SOURCE_WALLET_NOT_FOUND,
+        "Transactions's source wallet not found",
+        404,
+    )
+    .add_error_with_status_code(
+        TransactionError.DESTINATION_WALLET_NOT_FOUND,
+        "Transaction's destination wallet not found",
+        404,
+    )
+    .add_error_with_status_code(
+        TransactionError.INCORRECT_API_KEY, "Incorrect Api Key", 401
+    )
+    .add_error_with_status_code(
+        TransactionError.NOT_ENOUGH_AMOUNT_ON_SOURCE_ACCOUNT,
+        "Not enough coins on source account to complete transaction",
+        402,
+    )
+    .build()
+)
 
 transaction_api = APIRouter()
 
@@ -44,9 +61,7 @@ def create_transaction(
     if isinstance(transaction_made_response, Ok):
         return transaction_made_response.value
     else:
-        raise HTTPException(
-            status_code=400, detail=error_message[transaction_made_response.value]
-        )
+        error_formatter.raise_http_exception(transaction_made_response.value)
 
 
 @transaction_api.get("/transactions")
@@ -60,9 +75,7 @@ def get_transactions_for_user(
     if isinstance(get_transactions_response, Ok):
         return get_transactions_response.value
     else:
-        raise HTTPException(
-            status_code=400, detail=error_message[get_transactions_response.value]
-        )
+        error_formatter.raise_http_exception(get_transactions_response.value)
 
 
 @transaction_api.get("/wallets/{address}/transactions")
@@ -76,6 +89,4 @@ def get_transactions_for_wallet(
     if isinstance(get_transactions_response, Ok):
         return get_transactions_response.value
     else:
-        raise HTTPException(
-            status_code=400, detail=error_message[get_transactions_response.value]
-        )
+        error_formatter.raise_http_exception(get_transactions_response.value)

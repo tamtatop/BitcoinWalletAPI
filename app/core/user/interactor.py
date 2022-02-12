@@ -1,6 +1,5 @@
-import uuid
 from dataclasses import dataclass
-from typing import Callable, Optional, Protocol
+from typing import Optional, Protocol
 
 from app.core.key_generator import ApiKeyGenerator
 from app.core.user.entity import User
