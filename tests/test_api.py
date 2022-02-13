@@ -1,16 +1,10 @@
 from typing import Callable, Dict
 
-import pytest
 from fastapi.testclient import TestClient
 
 from app.core.admin.interactor import ADMIN_KEY
 from app.core.btc_constants import INITIAL_WALLET_VALUE_SATOSHIS
-from app.core.facade import WalletService
 from app.core.wallet.interactor import MAX_WALLETS_PER_PERSON
-from app.infra.fastapi.api_main import setup_fastapi
-from app.infra.inmemory.transaction import InMemoryTransactionRepository
-from app.infra.inmemory.user import InMemoryUserRepository
-from app.infra.inmemory.wallet import InMemoryWalletRepository
 
 API_ARG_KEY_NAME = "api_key"
 WALLET_ADDRES_KEY_NAME = "wallet_address"
@@ -24,28 +18,6 @@ class StatusCode:
     PAYMENT_REQUIRED = 402
     FORBIDDEN = 403
     NOT_FOUND = 404
-
-
-@pytest.fixture(scope="function")
-def api_client() -> TestClient:
-    user_repository = InMemoryUserRepository()
-    wallet_repository = InMemoryWalletRepository()
-    transaction_and_admin_repository = InMemoryTransactionRepository(wallet_repository)
-    wallet_service = WalletService.create(
-        user_repository=user_repository,
-        wallet_repository=wallet_repository,
-        transaction_repository=transaction_and_admin_repository,
-        admin_repository=transaction_and_admin_repository,
-    )
-    return TestClient(setup_fastapi(wallet_service))
-
-
-@pytest.fixture(scope="module")
-def from_msg() -> Callable[[str], Dict[str, str]]:
-    def f(_msg: str) -> Dict[str, str]:
-        return {"detail": _msg}
-
-    return f
 
 
 def test_url_existance(api_client: TestClient) -> None:

@@ -1,13 +1,8 @@
-from unittest.mock import MagicMock
-
-from result import Ok, Result
-from result.result import Err
+from result import Err, Ok
 
 from app.core.btc_constants import INITIAL_WALLET_VALUE_SATOSHIS, SATOSHI_IN_BTC
-from app.core.currency_converter import ConversionError, FiatCurrency
-from app.core.user.entity import User
+from app.core.key_generator import ApiKeyGenerator
 from app.core.user.interactor import IUserRepository
-from app.core.wallet.entity import Wallet
 from app.core.wallet.interactor import (
     CreateWalletRequest,
     GetWalletRequest,
@@ -17,57 +12,15 @@ from app.core.wallet.interactor import (
     WalletInteractor,
     WalletResponse,
 )
-
-
-class FakeCurrencyConverter:
-    def convert_btc_to_fiat(
-        self, satoshis: int, currency: FiatCurrency
-    ) -> Result[float, ConversionError]:
-        return Ok(satoshis * 2)
-
-
-def wallet_address_creator() -> str:
-    return "wallet address"
-
-
-def test_create_wallet_magin_mock() -> None:
-    wallet_address = wallet_address_creator()
-    user_api_key = "bla"
-
-    fake_wallet_repository = MagicMock()
-    fake_wallet_repository.create_wallet = MagicMock(
-        return_value=Wallet(wallet_address, user_api_key, INITIAL_WALLET_VALUE_SATOSHIS)
-    )
-    fake_wallet_repository.get_user_wallets = MagicMock(
-        return_value=[
-            Wallet(wallet_address, user_api_key, INITIAL_WALLET_VALUE_SATOSHIS)
-        ]
-    )
-
-    fake_user_repository = MagicMock()
-    fake_user_repository.get_user = MagicMock(return_value=User(user_api_key))
-
-    wallet_interactor = WalletInteractor(
-        fake_wallet_repository,
-        fake_user_repository,
-        FakeCurrencyConverter(),
-        wallet_address_creator,
-    )
-    response = wallet_interactor.create_wallet(CreateWalletRequest(user_api_key))
-
-    fake_user_repository.get_user.assert_called_once_with(user_api_key)
-    fake_wallet_repository.create_wallet.assert_called_once()
-
-    assert isinstance(response, Ok)
-    assert response.value.wallet_address == wallet_address
-    assert response.value.balance_btc == INITIAL_WALLET_VALUE_SATOSHIS / SATOSHI_IN_BTC
-    assert response.value.balance_usd == INITIAL_WALLET_VALUE_SATOSHIS * 2
+from tests.conftest import FakeCurrencyConverter
 
 
 def test_create_wallet(
-    wallet_repository: IWalletRepository, user_repository: IUserRepository
+    wallet_repository: IWalletRepository,
+    user_repository: IUserRepository,
+    currency_convertor: FakeCurrencyConverter,
+    wallet_address_creator_fun: ApiKeyGenerator,
 ) -> None:
-
     test_user_api = "Dummy Key"
 
     user_repository.create_user(test_user_api)
@@ -75,8 +28,8 @@ def test_create_wallet(
     interactor = WalletInteractor(
         wallet_repository,
         user_repository,
-        FakeCurrencyConverter(),
-        wallet_address_creator,
+        currency_convertor,
+        wallet_address_creator_fun,
     )
 
     result_err_no_user = interactor.create_wallet(CreateWalletRequest(""))
@@ -85,7 +38,7 @@ def test_create_wallet(
 
     result_ok = interactor.create_wallet(CreateWalletRequest(test_user_api))
     assert isinstance(result_ok, Ok)
-    assert result_ok.value.wallet_address == wallet_address_creator()
+    assert result_ok.value.wallet_address == wallet_address_creator_fun()
     assert result_ok.value.balance_btc == INITIAL_WALLET_VALUE_SATOSHIS / SATOSHI_IN_BTC
     assert result_ok.value.balance_usd == INITIAL_WALLET_VALUE_SATOSHIS * 2
 
@@ -121,7 +74,9 @@ def test_create_wallet_user_not_found_fake_user(
 
 
 def test_create_wallet_with_correct_user(
-    wallet_interactor: IWalletInteractor, user_repository: IUserRepository
+    wallet_interactor: IWalletInteractor,
+    user_repository: IUserRepository,
+    wallet_address_creator_fun: ApiKeyGenerator,
 ) -> None:
     test_user_api = "Dummy Key"
     user_repository.create_user(test_user_api)
@@ -132,7 +87,7 @@ def test_create_wallet_with_correct_user(
     assert isinstance(wallet_creating_attempt_with_real_api, Ok)
 
     successfully_created_wallet = wallet_creating_attempt_with_real_api.value
-    assert successfully_created_wallet.wallet_address == wallet_address_creator()
+    assert successfully_created_wallet.wallet_address == wallet_address_creator_fun()
     assert (
         successfully_created_wallet.balance_btc
         == INITIAL_WALLET_VALUE_SATOSHIS / SATOSHI_IN_BTC
@@ -184,7 +139,10 @@ def test_create_wallet_limit_reached(
 
 
 def test_get_wallet(
-    wallet_repository: IWalletRepository, user_repository: IUserRepository
+    wallet_repository: IWalletRepository,
+    user_repository: IUserRepository,
+    currency_convertor: FakeCurrencyConverter,
+    wallet_address_creator_fun: ApiKeyGenerator,
 ) -> None:
     test_user_api = "Dummy Key"
 
@@ -192,8 +150,8 @@ def test_get_wallet(
     interactor = WalletInteractor(
         wallet_repository,
         user_repository,
-        FakeCurrencyConverter(),
-        wallet_address_creator,
+        currency_convertor,
+        wallet_address_creator_fun,
     )
     response = interactor.create_wallet(CreateWalletRequest(test_user_api))
     assert isinstance(response, Ok)

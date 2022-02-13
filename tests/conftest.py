@@ -1,14 +1,21 @@
-from typing import Protocol
+from typing import Callable, Dict, Protocol
 
 import pytest
 from _pytest.config.argparsing import Parser
+from fastapi.testclient import TestClient
+from result import Ok, Result
 
 from app.core.admin.interactor import (
     AdminInteractor,
     IAdminInteractor,
     IAdminRepository,
 )
-from app.core.currency_converter import ICurrencyConverter
+from app.core.currency_converter import (
+    ConversionError,
+    FiatCurrency,
+    ICurrencyConverter,
+)
+from app.core.facade import WalletService
 from app.core.key_generator import (
     ApiKeyGenerator,
     generate_new_user_key,
@@ -26,13 +33,13 @@ from app.core.wallet.interactor import (
     IWalletRepository,
     WalletInteractor,
 )
+from app.infra.fastapi.api_main import setup_fastapi
 from app.infra.inmemory.transaction import InMemoryTransactionRepository
 from app.infra.inmemory.user import InMemoryUserRepository
 from app.infra.inmemory.wallet import InMemoryWalletRepository
 from app.infra.sqlite.transaction import SqlTransactionRepository
 from app.infra.sqlite.user import SqlUserRepository
 from app.infra.sqlite.wallet import SqlWalletRepository
-from tests.test_wallet_interactor import FakeCurrencyConverter, wallet_address_creator
 
 
 def pytest_addoption(parser: Parser) -> None:
@@ -94,6 +101,15 @@ def admin_repository(
     return transaction_and_admin_repository
 
 
+class FakeCurrencyConverter:
+    scale = 2
+
+    def convert_btc_to_fiat(
+        self, satoshis: int, currency: FiatCurrency
+    ) -> Result[float, ConversionError]:
+        return Ok(satoshis * self.scale)
+
+
 @pytest.fixture(scope="function")
 def currency_convertor(request: pytest.FixtureRequest) -> ICurrencyConverter:
     return FakeCurrencyConverter()
@@ -101,7 +117,10 @@ def currency_convertor(request: pytest.FixtureRequest) -> ICurrencyConverter:
 
 @pytest.fixture(scope="function")
 def wallet_address_creator_fun(request: pytest.FixtureRequest) -> ApiKeyGenerator:
-    return wallet_address_creator
+    def f() -> str:
+        return "wallet address"
+
+    return f
 
 
 @pytest.fixture(scope="function")
@@ -172,3 +191,25 @@ def transaction_interactor(
     return TransactionInteractor(
         transaction_repository, user_repository, wallet_repository, fee_calculator
     )
+
+
+@pytest.fixture(scope="function")
+def api_client() -> TestClient:
+    user_repository = InMemoryUserRepository()
+    wallet_repository = InMemoryWalletRepository()
+    transaction_and_admin_repository = InMemoryTransactionRepository(wallet_repository)
+    wallet_service = WalletService.create(
+        user_repository=user_repository,
+        wallet_repository=wallet_repository,
+        transaction_repository=transaction_and_admin_repository,
+        admin_repository=transaction_and_admin_repository,
+    )
+    return TestClient(setup_fastapi(wallet_service))
+
+
+@pytest.fixture(scope="module")
+def from_msg() -> Callable[[str], Dict[str, str]]:
+    def f(_msg: str) -> Dict[str, str]:
+        return {"detail": _msg}
+
+    return f
