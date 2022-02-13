@@ -33,7 +33,9 @@ error_formatter = (
         413,
     )
     .add_error_with_status_code(
-        TransactionError.INCORRECT_API_KEY, "Provided api key does now own source wallet", 414
+        TransactionError.INCORRECT_API_KEY,
+        "Provided api key does now own source wallet",
+        414,
     )
     .add_error_with_status_code(
         TransactionError.NOT_ENOUGH_AMOUNT_ON_SOURCE_ACCOUNT,

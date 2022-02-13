@@ -13,18 +13,24 @@ TRANSACTIONS_KEY_NAME = "transactions"
 
 class StatusCode:
     OK = 200
-    BAD_REQUEST = 400
-    UNAUTHORIZED = 401
-    PAYMENT_REQUIRED = 402
-    FORBIDDEN = 403
-    NOT_FOUND = 404
+
+    API_ENDPOINT_NOT_FOUND = 404
+
+    USER_NOT_FOUND = 410
+    WALLET_NOT_FOUND = 411
+    NO_SOURCE_WALLET = 412
+    NO_DESTINATION_WALLET = 413
+    UNAUTHORIZED = 414
+    INSUFFICIENT_FUNDS = 415
+    MAX_WALLETS_REACHED = 412
+    WRONG_ADMIN_KEY = 410
 
 
 def test_url_existance(api_client: TestClient) -> None:
     invalid_url = "/if_you_make_request_to_this_url_you_will_get_A_in_Design_Patterns"
 
-    assert api_client.get(invalid_url).status_code == StatusCode.NOT_FOUND
-    assert api_client.post(invalid_url).status_code == StatusCode.NOT_FOUND
+    assert api_client.get(invalid_url).status_code == StatusCode.API_ENDPOINT_NOT_FOUND
+    assert api_client.post(invalid_url).status_code == StatusCode.API_ENDPOINT_NOT_FOUND
 
     response_user_created = api_client.post("/users")
     assert response_user_created.status_code == StatusCode.OK
@@ -104,7 +110,7 @@ def test_api_error_messages_admin(
             API_ARG_KEY_NAME: "hacker",
         },
     )
-    assert response.status_code == StatusCode.UNAUTHORIZED
+    assert response.status_code == StatusCode.WRONG_ADMIN_KEY
     assert response.json() == from_msg("Incorrect api key for admin")
 
 
@@ -115,7 +121,7 @@ def test_api_error_messages_wallet(
     test_user_2 = api_client.post("/users").json()[API_ARG_KEY_NAME]
 
     response_create_wallet = api_client.post("/wallets", params={API_ARG_KEY_NAME: ""})
-    assert response_create_wallet.status_code == StatusCode.NOT_FOUND
+    assert response_create_wallet.status_code == StatusCode.USER_NOT_FOUND
     assert response_create_wallet.json() == from_msg("User not found")
 
     response_get_wallet = api_client.get(
@@ -124,7 +130,7 @@ def test_api_error_messages_wallet(
             API_ARG_KEY_NAME: test_user_1,
         },
     )
-    assert response_get_wallet.status_code == StatusCode.NOT_FOUND
+    assert response_get_wallet.status_code == StatusCode.WALLET_NOT_FOUND
     assert response_get_wallet.json() == from_msg("Wallet not found")
 
     test_user_2_wallet = api_client.post(
@@ -143,7 +149,7 @@ def test_api_error_messages_wallet(
     response_wallet_limit = api_client.post(
         "/wallets", params={API_ARG_KEY_NAME: test_user_2}
     )
-    assert response_wallet_limit.status_code == StatusCode.FORBIDDEN
+    assert response_wallet_limit.status_code == StatusCode.MAX_WALLETS_REACHED
     assert response_wallet_limit.json() == from_msg(
         f"Cannot create more than {MAX_WALLETS_PER_PERSON} wallets"
     )
@@ -174,13 +180,13 @@ def test_api_error_messages_transaction(
     ).json()[WALLET_ADDRES_KEY_NAME]
 
     response_no_user = api_client.get("/transactions", params={API_ARG_KEY_NAME: ""})
-    assert response_no_user.status_code == StatusCode.NOT_FOUND
+    assert response_no_user.status_code == StatusCode.USER_NOT_FOUND
     assert response_no_user.json() == from_msg("User not found")
 
     response_no_wallet = api_client.get(
         "/wallets/no_wallet/transactions", params={API_ARG_KEY_NAME: test_user_1}
     )
-    assert response_no_wallet.status_code == StatusCode.NOT_FOUND
+    assert response_no_wallet.status_code == StatusCode.WALLET_NOT_FOUND
     assert response_no_wallet.json() == from_msg("Wallet not found")
 
     response_no_src_wallet = api_client.post(
@@ -202,11 +208,11 @@ def test_api_error_messages_transaction(
         },
     )
 
-    assert response_no_src_wallet.status_code == StatusCode.NOT_FOUND
+    assert response_no_src_wallet.status_code == StatusCode.NO_SOURCE_WALLET
     assert response_no_src_wallet.json() == from_msg(
         "Transactions's source wallet not found"
     )
-    assert response_no_dest_wallet.status_code == StatusCode.NOT_FOUND
+    assert response_no_dest_wallet.status_code == StatusCode.NO_DESTINATION_WALLET
     assert response_no_dest_wallet.json() == from_msg(
         "Transaction's destination wallet not found"
     )
@@ -221,7 +227,9 @@ def test_api_error_messages_transaction(
         },
     )
     assert response_no_couns.status_code == StatusCode.UNAUTHORIZED
-    assert response_no_couns.json() == from_msg("Incorrect Api Key")
+    assert response_no_couns.json() == from_msg(
+        "Provided api key does now own source wallet"
+    )
 
     response_no_couns = api_client.post(
         "/transactions",
@@ -232,7 +240,7 @@ def test_api_error_messages_transaction(
             "amount": INITIAL_WALLET_VALUE_SATOSHIS ** 2,
         },
     )
-    assert response_no_couns.status_code == StatusCode.PAYMENT_REQUIRED
+    assert response_no_couns.status_code == StatusCode.INSUFFICIENT_FUNDS
     assert response_no_couns.json() == from_msg(
-        "Not enough coins on source account to complete transaction"
+        "Not enough coins on source wallet to complete transaction"
     )
