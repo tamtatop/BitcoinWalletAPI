@@ -2,7 +2,7 @@ from typing import Callable, Dict
 
 from starlette.testclient import TestClient
 
-from tests.test_api import API_ARG_KEY_NAME, StatusCode
+from tests.test_api import API_ADMIN_KEY, StatusCode
 
 
 def test_api_error_messages_admin(
@@ -11,7 +11,7 @@ def test_api_error_messages_admin(
     response = api_client.get(
         "/statistics",
         params={
-            API_ARG_KEY_NAME: "hacker",
+            API_ADMIN_KEY: "hacker",
         },
     )
     assert response.status_code == StatusCode.WRONG_ADMIN_KEY

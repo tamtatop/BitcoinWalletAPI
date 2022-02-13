@@ -111,12 +111,12 @@ class FakeCurrencyConverter:
 
 
 @pytest.fixture(scope="function")
-def currency_convertor(request: pytest.FixtureRequest) -> ICurrencyConverter:
+def currency_convertor() -> ICurrencyConverter:
     return FakeCurrencyConverter()
 
 
 @pytest.fixture(scope="function")
-def wallet_address_creator_fun(request: pytest.FixtureRequest) -> ApiKeyGenerator:
+def wallet_address_creator_fun() -> ApiKeyGenerator:
     def f() -> str:
         return "wallet address"
 
@@ -124,7 +124,7 @@ def wallet_address_creator_fun(request: pytest.FixtureRequest) -> ApiKeyGenerato
 
 
 @pytest.fixture(scope="function")
-def wallet_address_creator_real_fun(request: pytest.FixtureRequest) -> ApiKeyGenerator:
+def wallet_address_creator_real_fun() -> ApiKeyGenerator:
     return generate_wallet_address
 
 
@@ -159,7 +159,7 @@ def wallet_interactor_real_generator(
 
 
 @pytest.fixture(scope="function")
-def api_key_creator(request: pytest.FixtureRequest) -> ApiKeyGenerator:
+def api_key_creator() -> ApiKeyGenerator:
     return generate_new_user_key
 
 
@@ -177,7 +177,7 @@ def admin_interactor(admin_repository: IAdminRepository) -> IAdminInteractor:
 
 
 @pytest.fixture(scope="function")
-def fee_calculator(request: pytest.FixtureRequest) -> IFeeCalculator:
+def fee_calculator() -> IFeeCalculator:
     return FeeCalculator()
 
 

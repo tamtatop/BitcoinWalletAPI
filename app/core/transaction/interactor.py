@@ -44,21 +44,6 @@ class GetTransactionsResponse:
     transactions: List[Transaction]
 
 
-#
-# `POST /transactions`
-#   - Requires API key
-#   - Makes a transaction from one wallet to another
-#   - Transaction is free if the same user is the owner of both wallets
-#   - System takes a 1.5% (of the transferred amount) fee for transfers to the foreign wallets
-#
-# `GET /transactions`
-#   - Requires API key
-#   - Returns list of transactions
-# `GET /wallets/{address}/transactions`
-#   - Requires API key
-#   - returns transactions related to the wallet
-
-
 class ITransactionRepository(Protocol):
     def create_transaction(self, transaction: Transaction) -> None:
         raise NotImplementedError()
@@ -89,11 +74,6 @@ class TransactionInteractor:
     wallet_repository: IWalletRepository
     fee_calculator: IFeeCalculator
 
-    # `POST /transactions`
-    #   - Requires API key
-    #   - Makes a transaction from one wallet to another
-    #   - Transaction is free if the same user is the owner of both wallets
-    #   - System takes a 1.5% (of the transferred amount) fee for transfers to the foreign wallets
     def make_transaction(
         self, request: MakeTransactionRequest
     ) -> Result[MakeTransactionResponse, TransactionError]:

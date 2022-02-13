@@ -68,7 +68,7 @@ def test_api_error_messages_transaction(
     )
     assert response_no_couns.status_code == StatusCode.UNAUTHORIZED
     assert response_no_couns.json() == from_msg(
-        "Provided api key does now own source wallet"
+        "Provided api key does not own source wallet"
     )
 
     response_no_couns = api_client.post(
@@ -77,7 +77,7 @@ def test_api_error_messages_transaction(
             API_ARG_KEY_NAME: test_user_1,
             "source": test_user_1_wallet,
             "destination": test_user_2_wallet,
-            "amount": INITIAL_WALLET_VALUE_SATOSHIS**2,
+            "amount": INITIAL_WALLET_VALUE_SATOSHIS ** 2,
         },
     )
     assert response_no_couns.status_code == StatusCode.INSUFFICIENT_FUNDS

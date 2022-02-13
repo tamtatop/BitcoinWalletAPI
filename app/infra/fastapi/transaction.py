@@ -34,7 +34,7 @@ error_formatter = (
     )
     .add_error_with_status_code(
         TransactionError.INCORRECT_API_KEY,
-        "Provided api key does now own source wallet",
+        "Provided api key does not own source wallet",
         414,
     )
     .add_error_with_status_code(

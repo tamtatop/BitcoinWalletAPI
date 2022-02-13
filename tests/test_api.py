@@ -2,6 +2,7 @@ from fastapi.testclient import TestClient
 
 from app.core.admin.interactor import ADMIN_KEY
 
+API_ADMIN_KEY = "admin_key"
 API_ARG_KEY_NAME = "api_key"
 WALLET_ADDRES_KEY_NAME = "wallet_address"
 TRANSACTIONS_KEY_NAME = "transactions"
@@ -91,7 +92,7 @@ def test_url_existence(api_client: TestClient) -> None:
     response_stats = api_client.get(
         "/statistics",
         params={
-            API_ARG_KEY_NAME: ADMIN_KEY,
+            API_ADMIN_KEY: ADMIN_KEY,
         },
     )
     assert response_stats.status_code == StatusCode.OK

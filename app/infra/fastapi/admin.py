@@ -27,9 +27,9 @@ admin_api = APIRouter()
     responses=error_formatter.responses(),
 )
 def get_statistics(
-    api_key: str, core: WalletService = Depends(get_core)
+    admin_key: str, core: WalletService = Depends(get_core)
 ) -> GetStatisticsResponse:
-    request = GetStatisticsRequest(api_key)
+    request = GetStatisticsRequest(admin_key)
 
     get_statistics_response = core.get_statistics(request)
 
