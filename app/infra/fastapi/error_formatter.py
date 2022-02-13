@@ -35,10 +35,12 @@ class ErrorFormatter:
         )
 
     def responses(self) -> Dict[Union[int, str], Dict[str, Any]]:
-        d: Dict[Union[int, str], Dict[str, Any]] = {UNDOCUMENTED_ERROR_CODE: {
-            "description": UNDOCUMENTER_ERROR_MESSAGE,
-            "model": ErrorModel,
-        }}
+        d: Dict[Union[int, str], Dict[str, Any]] = {
+            UNDOCUMENTED_ERROR_CODE: {
+                "description": UNDOCUMENTER_ERROR_MESSAGE,
+                "model": ErrorModel,
+            }
+        }
         for v in self.error_format.values():
             d[v.status_code] = {"description": v.error_message, "model": ErrorModel}
         return d
