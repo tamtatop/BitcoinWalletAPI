@@ -1,7 +1,11 @@
+from typing import List
+
+import pydantic
 from fastapi import APIRouter, Depends
 from result import Ok
 
 from app.core.facade import WalletService
+from app.core.transaction.entity import Transaction
 from app.core.transaction.interactor import (
     GetTransactionsRequest,
     GetTransactionsResponse,
@@ -14,27 +18,27 @@ from app.infra.fastapi.error_formatter import ErrorFormatterBuilder
 
 error_formatter = (
     ErrorFormatterBuilder()
-    .add_error_with_status_code(TransactionError.USER_NOT_FOUND, "User not found", 404)
+    .add_error_with_status_code(TransactionError.USER_NOT_FOUND, "User not found", 410)
     .add_error_with_status_code(
-        TransactionError.WALLET_NOT_FOUND, "Wallet not found", 404
+        TransactionError.WALLET_NOT_FOUND, "Wallet not found", 411
     )
     .add_error_with_status_code(
         TransactionError.SOURCE_WALLET_NOT_FOUND,
         "Transactions's source wallet not found",
-        404,
+        412,
     )
     .add_error_with_status_code(
         TransactionError.DESTINATION_WALLET_NOT_FOUND,
         "Transaction's destination wallet not found",
-        404,
+        413,
     )
     .add_error_with_status_code(
-        TransactionError.INCORRECT_API_KEY, "Incorrect Api Key", 401
+        TransactionError.INCORRECT_API_KEY, "Provided api key does now own source wallet", 414
     )
     .add_error_with_status_code(
         TransactionError.NOT_ENOUGH_AMOUNT_ON_SOURCE_ACCOUNT,
-        "Not enough coins on source account to complete transaction",
-        402,
+        "Not enough coins on source wallet to complete transaction",
+        415,
     )
     .build()
 )
@@ -42,7 +46,17 @@ error_formatter = (
 transaction_api = APIRouter()
 
 
-@transaction_api.post("/transactions")
+# fastapi is supposed to work with normal dataclasses but I guess it still does not work fully :shrug:
+@pydantic.dataclasses.dataclass
+class MakeTransactionResponsePydantic(MakeTransactionResponse):
+    pass
+
+
+@transaction_api.post(
+    "/transactions",
+    response_model=MakeTransactionResponsePydantic,
+    responses=error_formatter.responses(),
+)
 def create_transaction(
     api_key: str,
     source: str,
@@ -64,7 +78,22 @@ def create_transaction(
         error_formatter.raise_http_exception(transaction_made_response.value)
 
 
-@transaction_api.get("/transactions")
+# Couldn't make it work directly with fastapi :')
+@pydantic.dataclasses.dataclass
+class TransactionPydantic(Transaction):
+    pass
+
+
+@pydantic.dataclasses.dataclass
+class GetTransactionsResponsePydantic:
+    transactions: List[TransactionPydantic]
+
+
+@transaction_api.get(
+    "/transactions",
+    response_model=GetTransactionsResponsePydantic,
+    responses=error_formatter.responses(),
+)
 def get_transactions_for_user(
     api_key: str, core: WalletService = Depends(get_core)
 ) -> GetTransactionsResponse:
@@ -78,7 +107,11 @@ def get_transactions_for_user(
         error_formatter.raise_http_exception(get_transactions_response.value)
 
 
-@transaction_api.get("/wallets/{address}/transactions")
+@transaction_api.get(
+    "/wallets/{address}/transactions",
+    response_model=GetTransactionsResponsePydantic,
+    responses=error_formatter.responses(),
+)
 def get_transactions_for_wallet(
     api_key: str, address: str, core: WalletService = Depends(get_core)
 ) -> GetTransactionsResponse:

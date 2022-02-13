@@ -1,3 +1,4 @@
+import pydantic
 from fastapi import APIRouter, Depends
 from result.result import Ok
 
@@ -14,20 +15,20 @@ from app.infra.fastapi.error_formatter import ErrorFormatterBuilder
 
 error_formatter = (
     ErrorFormatterBuilder()
-    .add_error_with_status_code(WalletError.USER_NOT_FOUND, "User not found", 404)
-    .add_error_with_status_code(WalletError.WALLET_NOT_FOUND, "Wallet not found", 404)
+    .add_error_with_status_code(WalletError.USER_NOT_FOUND, "User not found", 410)
+    .add_error_with_status_code(WalletError.WALLET_NOT_FOUND, "Wallet not found", 411)
     .add_error_with_status_code(
         WalletError.WALLET_LIMIT_REACHED,
         f"Cannot create more than {MAX_WALLETS_PER_PERSON} wallets",
-        403,
+        412,
     )
     .add_error_with_status_code(
-        WalletError.UNSUPPORTED_CURRENCY, "Unsupported Currency", 404
+        WalletError.UNSUPPORTED_CURRENCY, "Unsupported Currency", 413
     )
     .add_error_with_status_code(
         WalletError.NOT_THIS_USERS_WALLET,
         "Provided wallet doesn't belong to provided user",
-        401,
+        414,
     )
     .build()
 )
@@ -35,7 +36,17 @@ error_formatter = (
 wallet_api = APIRouter()
 
 
-@wallet_api.post("/wallets")
+# fastapi is supposed to work with normal dataclasses but I guess it still does not work fully :shrug:
+@pydantic.dataclasses.dataclass
+class WalletResponsePydantic(WalletResponse):
+    pass
+
+
+@wallet_api.post(
+    "/wallets",
+    response_model=WalletResponsePydantic,
+    responses=error_formatter.responses(),
+)
 def create_wallet(
     api_key: str, core: WalletService = Depends(get_core)
 ) -> WalletResponse:
@@ -48,7 +59,11 @@ def create_wallet(
         error_formatter.raise_http_exception(wallet_created_response.value)
 
 
-@wallet_api.get("/wallets/{address}")
+@wallet_api.get(
+    "/wallets/{address}",
+    response_model=WalletResponsePydantic,
+    responses=error_formatter.responses(),
+)
 def get_wallet(
     api_key: str, address: str, core: WalletService = Depends(get_core)
 ) -> WalletResponse:

@@ -13,7 +13,7 @@ from app.infra.fastapi.error_formatter import ErrorFormatterBuilder
 error_formatter = (
     ErrorFormatterBuilder()
     .add_error_with_status_code(
-        AdminError.INCORRECT_ADMIN_KEY, "Incorrect api key for admin", 401
+        AdminError.INCORRECT_ADMIN_KEY, "Incorrect api key for admin", 410
     )
     .build()
 )
@@ -21,7 +21,11 @@ error_formatter = (
 admin_api = APIRouter()
 
 
-@admin_api.get("/statistics")
+@admin_api.get(
+    "/statistics",
+    response_model=GetStatisticsResponse,
+    responses=error_formatter.responses(),
+)
 def get_statistics(
     api_key: str, core: WalletService = Depends(get_core)
 ) -> GetStatisticsResponse:
