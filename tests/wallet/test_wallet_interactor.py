@@ -53,7 +53,7 @@ def test_create_wallet(
 
 
 def test_create_wallet_user_not_found_no_user(
-    wallet_interactor: IWalletInteractor 
+    wallet_interactor: IWalletInteractor,
 ) -> None:
     wallet_creating_attempt_with_no_user = wallet_interactor.create_wallet(
         CreateWalletRequest("")
@@ -63,7 +63,7 @@ def test_create_wallet_user_not_found_no_user(
 
 
 def test_create_wallet_user_not_found_fake_user(
-    wallet_interactor: IWalletInteractor 
+    wallet_interactor: IWalletInteractor,
 ) -> None:
     fake_user_api = "Fake Key"
     wallet_creating_attempt_with_fake_user = wallet_interactor.create_wallet(
@@ -177,7 +177,7 @@ def test_get_wallet(
 
 
 def test_get_wallet_user_not_found_no_user(
-    wallet_interactor: IWalletInteractor
+    wallet_interactor: IWalletInteractor,
 ) -> None:
     wallet_acquiring_attempt_with_no_user = wallet_interactor.get_wallet(
         GetWalletRequest("", "aaa")
@@ -187,7 +187,7 @@ def test_get_wallet_user_not_found_no_user(
 
 
 def test_get_wallet_user_not_found_fake_user(
-    wallet_interactor: IWalletInteractor 
+    wallet_interactor: IWalletInteractor,
 ) -> None:
     fake_user_api = "Fake Key"
     wallet_acquiring_attempt_with_fake_user = wallet_interactor.get_wallet(
