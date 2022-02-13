@@ -102,7 +102,7 @@ def test_make_transaction_one_user(
             user_api_key=user_api_key,
             source_address=wallet_address_1,
             destination_address=wallet_address_2,
-            amount=init_balance ** 2,
+            amount=init_balance**2,
         )
     )
 
